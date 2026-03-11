@@ -1,0 +1,232 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages          Message[]
+  groupMemberships  GroupMember[]
+  anonymousSessions AnonymousSession[]
+  strangerRooms1    StrangerRoom[]       @relation("StrangerUser1")
+  strangerRooms2    StrangerRoom[]       @relation("StrangerUser2")
+  interestRooms     InterestRoomMember[]
+  storyGroups       StoryGroupMember[]
+  storyEntries      StoryEntry[]
+  storyWins         StoryResult[]
+
+  sentRequests      FriendRequest[]      @relation("SentRequests")
+  receivedRequests  FriendRequest[]      @relation("ReceivedRequests")
+  friendships1      Friendship[]         @relation("FriendshipUser1")
+  friendships2      Friendship[]         @relation("FriendshipUser2")
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  content   String
+  createdAt DateTime @default(now())
+  isRead    Boolean  @default(false)
+
+  senderId  String
+  sender    User     @relation(fields: [senderId], references: [id])
+
+  receiverId String? // For 1-to-1
+  groupId    String? // For group
+  group      Group?   @relation(fields: [groupId], references: [id])
+
+  roomType   RoomType @default(DIRECT)
+  roomId     String?  // Polymorphic ID for Stranger/Interest/Practice/Story rooms
+}
+
+enum RoomType {
+  DIRECT
+  GROUP
+  STRANGER
+  INTEREST
+  PRACTICE
+  STORY
+}
+
+model Group {
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now())
+
+  members   GroupMember[]
+  messages  Message[]
+}
+
+model GroupMember {
+  id        String   @id @default(uuid())
+  joinedAt  DateTime @default(now())
+  isAdmin   Boolean  @default(false)
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  groupId   String
+  group     Group    @relation(fields: [groupId], references: [id])
+
+  @@unique([userId, groupId])
+}
+
+model AnonymousSession {
+  id        String   @id @default(uuid())
+  alias     String
+  isActive  Boolean  @default(true)
+  expiresAt DateTime
+
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model StrangerRoom {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  isActive  Boolean  @default(true)
+
+  user1Id   String
+  user1     User     @relation(name: "StrangerUser1", fields: [user1Id], references: [id])
+  user2Id   String?
+  user2     User?    @relation(name: "StrangerUser2", fields: [user2Id], references: [id])
+}
+
+model InterestRoom {
+  id        String   @id @default(uuid())
+  topic     String   // Coding, Business, Teaching, Others
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  members   InterestRoomMember[]
+}
+
+model InterestRoomMember {
+  id        String   @id @default(uuid())
+  joinedAt  DateTime @default(now())
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  roomId    String
+  room      InterestRoom @relation(fields: [roomId], references: [id])
+
+  @@unique([userId, roomId])
+}
+
+model EnglishPracticeSession {
+  id                String   @id @default(uuid())
+  originalText      String
+  correctedText     String
+  createdAt         DateTime @default(now())
+
+  senderId          String
+  // sender            User     @relation(fields: [senderId], references: [id])
+  receiverId        String
+}
+
+model StoryGroup {
+  id             String             @id @default(uuid())
+  title          String?            // Can be set later
+  genre          String
+  status         StoryStatus        @default(ACTIVE)
+  startDate      DateTime           @default(now())
+  endDate        DateTime
+  isGlobalWinner Boolean            @default(false)
+  formattedStory String?            // AI combined story
+  
+  members        StoryGroupMember[]
+  entries        StoryEntry[]
+  results        StoryResult[]
+  globalResults  GlobalStoryResult[]
+}
+
+enum StoryStatus {
+  ACTIVE
+  EVALUATING
+  COMPLETED
+}
+
+model StoryGroupMember {
+  id        String   @id @default(uuid())
+  joinedAt  DateTime @default(now())
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  groupId   String
+  group     StoryGroup @relation(fields: [groupId], references: [id])
+
+  @@unique([userId, groupId])
+}
+
+model StoryEntry {
+  id        String   @id @default(uuid())
+  content   String
+  dayNumber Int
+  createdAt DateTime @default(now())
+
+  groupId   String
+  group     StoryGroup @relation(fields: [groupId], references: [id])
+  userId    String
+  user      User       @relation(fields: [userId], references: [id])
+}
+
+model StoryResult {
+  id               String   @id @default(uuid())
+  aiExplanation    String
+  bestTurningPoint String?
+
+  groupId          String
+  group            StoryGroup @relation(fields: [groupId], references: [id])
+  winnerUserId     String
+  winnerUser       User       @relation(fields: [winnerUserId], references: [id])
+}
+
+model GlobalStoryResult {
+  id             String   @id @default(uuid())
+  aiExplanation  String
+  storyScore     Int
+
+  storyGroupId   String
+  storyGroup     StoryGroup @relation(fields: [storyGroupId], references: [id])
+}
+
+enum RequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+model FriendRequest {
+  id         String   @id @default(uuid())
+  senderId   String
+  sender     User     @relation("SentRequests", fields: [senderId], references: [id])
+  receiverId String
+  receiver   User     @relation("ReceivedRequests", fields: [receiverId], references: [id])
+  status     RequestStatus @default(PENDING)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  @@unique([senderId, receiverId])
+}
+
+model Friendship {
+  id        String   @id @default(uuid())
+  user1Id   String
+  user1     User     @relation("FriendshipUser1", fields: [user1Id], references: [id])
+  user2Id   String
+  user2     User     @relation("FriendshipUser2", fields: [user2Id], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([user1Id, user2Id])
+}
