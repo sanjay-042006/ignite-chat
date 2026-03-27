@@ -17,12 +17,29 @@ export const protectRoute = async (req, res, next) => {
 
         const user = await prisma.user.findUnique({
             where: { id: decoded.userId },
-            select: { id: true, username: true, email: true }
+            select: { id: true, username: true, email: true, storyStreak: true, profilePic: true } // Added storyStreak & profilePic
         });
 
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
+
+        // --- Love Streak Calculation ---
+        const activeLove = await prisma.loveConnection.findFirst({
+            where: {
+                OR: [{ senderId: decoded.userId }, { receiverId: decoded.userId }],
+                status: 'ACCEPTED'
+            }
+        });
+
+        let loveStreak = 0;
+        if (activeLove) {
+            const diffDays = Math.ceil(Math.abs(new Date() - new Date(activeLove.createdAt)) / (1000 * 60 * 60 * 24));
+            loveStreak = Math.floor(diffDays / 30.44) + 1; // Starts at 1
+        }
+        
+        user.loveStreak = loveStreak;
+        // -------------------------------
 
         req.user = user;
         next();

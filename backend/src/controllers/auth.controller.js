@@ -10,15 +10,15 @@ const generateToken = (userId, res) => {
     res.cookie('jwt', token, {
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in MS
         httpOnly: true, // prevent XSS attacks cross-site scripting attacks
-        sameSite: 'strict', // CSRF attacks cross-site request forgery attacks
-        secure: process.env.NODE_ENV !== 'development',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        secure: process.env.NODE_ENV === 'production',
     });
 
     return token;
 };
 
 export const signup = async (req, res) => {
-    const { username, email, password } = req.body;
+    const { username, email, password, profilePic } = req.body;
 
     try {
         if (!username || !email || !password) {
@@ -29,14 +29,20 @@ export const signup = async (req, res) => {
             return res.status(400).json({ message: 'Password must be at least 6 characters' });
         }
 
-        const existingUser = await prisma.user.findFirst({
-            where: {
-                OR: [{ email }, { username }]
-            }
+        const existingUsername = await prisma.user.findUnique({
+            where: { username }
         });
 
-        if (existingUser) {
-            return res.status(400).json({ message: 'Username or Email already exists' });
+        if (existingUsername) {
+            return res.status(400).json({ message: 'Username is already taken' });
+        }
+
+        const existingEmail = await prisma.user.findUnique({
+            where: { email }
+        });
+
+        if (existingEmail) {
+            return res.status(400).json({ message: 'Email is already taken' });
         }
 
         const salt = await bcrypt.genSalt(10);
@@ -46,12 +52,14 @@ export const signup = async (req, res) => {
             data: {
                 username,
                 email,
-                password: hashedPassword
+                password: hashedPassword,
+                ...(profilePic && { profilePic })
             },
             select: {
                 id: true,
                 username: true,
                 email: true,
+                profilePic: true,
                 createdAt: true
             }
         });
@@ -62,6 +70,7 @@ export const signup = async (req, res) => {
             id: newUser.id,
             username: newUser.username,
             email: newUser.email,
+            profilePic: newUser.profilePic,
         });
     } catch (error) {
         console.error('Error in signup controller', error.message);
@@ -97,6 +106,7 @@ export const login = async (req, res) => {
             id: user.id,
             username: user.username,
             email: user.email,
+            profilePic: user.profilePic,
         });
     } catch (error) {
         console.error('Error in login controller', error.message);
@@ -120,5 +130,30 @@ export const checkAuth = (req, res) => {
     } catch (error) {
         console.log('Error in checkAuth controller', error.message);
         res.status(500).json({ message: 'Internal Server Error' });
+    }
+};
+
+export const updateProfile = async (req, res) => {
+    try {
+        const { profilePic } = req.body;
+        const userId = req.user.id;
+
+        if (!profilePic) {
+            return res.status(400).json({ message: 'Profile picture is required' });
+        }
+
+        const updatedUser = await prisma.user.update({
+            where: { id: userId },
+            data: { profilePic },
+            select: { id: true, username: true, email: true, profilePic: true, storyStreak: true } // Return needed fields
+        });
+
+        // Add dynamically calculated loveStreak since auth.js checkAuth won't run its injection here
+        updatedUser.loveStreak = req.user.loveStreak || 0;
+
+        res.status(200).json(updatedUser);
+    } catch (error) {
+        console.log('Error in updateProfile', error.message);
+        res.status(500).json({ message: 'Internal server error' });
     }
 };

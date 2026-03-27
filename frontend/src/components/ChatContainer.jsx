@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { useChatStore } from '../context/useChatStore';
 import { useAuthStore } from '../context/useAuthStore';
 import { useSocketStore } from '../context/useSocketStore';
-import { Loader2, Send } from 'lucide-react';
+import { Loader2, Send, UserPlus } from 'lucide-react';
+import MessageInput from './chat/MessageInput';
+import { MediaAttachment } from './chat/MediaAttachment';
 import clsx from 'clsx';
 
 const ChatContainer = () => {
@@ -15,7 +17,6 @@ const ChatContainer = () => {
     useEffect(() => {
         getMessages(selectedUser.id);
         subscribeToMessages();
-
         return () => unsubscribeFromMessages();
     }, [selectedUser.id, getMessages, subscribeToMessages, unsubscribeFromMessages]);
 
@@ -25,60 +26,67 @@ const ChatContainer = () => {
         }
     }, [messages]);
 
-    const handleSendMessage = async (e) => {
-        e.preventDefault();
-        if (!text.trim()) return;
 
-        await sendMessage({ text: text.trim() });
-        setText('');
-    };
 
     if (isMessagesLoading) {
         return (
-            <div className="flex-1 flex flex-col items-center justify-center bg-background/50 h-full">
-                <Loader2 className="size-10 animate-spin text-indigo-500" />
+            <div className="flex-1 flex items-center justify-center h-full">
+                <Loader2 className="size-8 animate-spin text-blue-500" />
             </div>
         );
     }
 
     return (
-        <div className="flex flex-col h-full bg-background/50 relative">
-            {/* Top Header */}
-            <div className="px-6 py-4 glass border-b border-white/5 flex items-center justify-between sticky top-0 z-10 shadow-sm">
-                <div className="flex items-center gap-4">
-                    <div className="relative">
-                        <div className="size-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold shadow-md border-2 border-background">
-                            {selectedUser.username.charAt(0).toUpperCase()}
-                        </div>
-                        {onlineUsers.includes(selectedUser.id) && (
-                            <span className="absolute bottom-0 right-0 size-3 bg-green-500 border-2 border-background rounded-full drop-shadow-sm"></span>
-                        )}
+        <div className="flex flex-col h-full relative" style={{ background: 'linear-gradient(180deg, rgba(59,130,246,0.02), transparent 30%)' }}>
+
+            {/* Header */}
+            <div className="px-4 py-2.5 border-b border-white/5 flex items-center gap-3 sticky top-0 z-10 backdrop-blur-xl"
+                style={{ background: 'rgba(0,0,0,0.2)' }}>
+                <div className="relative">
+                    <div className="size-9 rounded-full bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center text-white font-bold text-sm shadow-md shadow-blue-500/20 ring-2 ring-blue-500/10">
+                        {selectedUser.username.charAt(0).toUpperCase()}
                     </div>
-                    <div>
-                        <h3 className="font-semibold">{selectedUser.username}</h3>
-                        <p className="text-xs text-muted-foreground">{onlineUsers.includes(selectedUser.id) ? 'Online' : 'Offline'}</p>
-                    </div>
+                    <span className={clsx("absolute -bottom-0.5 -right-0.5 size-2.5 border-2 border-background rounded-full",
+                        onlineUsers.includes(selectedUser.id) ? "bg-emerald-400 shadow-sm shadow-emerald-400/50" : "bg-zinc-600"
+                    )} />
+                </div>
+                <div>
+                    <h3 className="font-semibold text-sm">{selectedUser.username}</h3>
+                    <p className={clsx("text-[10px] font-medium", onlineUsers.includes(selectedUser.id) ? "text-emerald-400/70" : "text-muted-foreground/50")}>
+                        {onlineUsers.includes(selectedUser.id) ? 'Online' : 'Offline'}
+                    </p>
                 </div>
             </div>
 
-            {/* Chat History Area */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-6">
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto p-3 space-y-3">
+                {messages.length === 0 && (
+                    <div className="flex flex-col items-center justify-center h-full text-center">
+                        <div className="size-12 rounded-full bg-blue-500/5 flex items-center justify-center mb-3">
+                            <Send className="size-5 text-blue-500/20" />
+                        </div>
+                        <p className="text-xs text-muted-foreground">Start chatting with {selectedUser.username}!</p>
+                    </div>
+                )}
+
                 {messages.map((message) => {
                     const isMine = message.senderId === authUser.id;
                     return (
-                        <div key={message.id} className={clsx("flex w-full", isMine ? "justify-end" : "justify-start")}>
+                        <div key={message.id} className={clsx("flex w-full gap-2", isMine ? "justify-end" : "justify-start")}>
                             {!isMine && (
-                                <div className="size-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold mr-2 mt-auto">
+                                <div className="size-6 rounded-full bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center text-white text-[10px] font-bold mt-auto shrink-0">
                                     {selectedUser.username.charAt(0).toUpperCase()}
                                 </div>
                             )}
                             <div className={clsx(
-                                "max-w-[70%] rounded-2xl p-4 shadow-sm backdrop-blur-sm",
-                                isMine ? "bg-indigo-600 font-medium text-white border border-indigo-500/50 rounded-br-none"
-                                    : "bg-card text-card-foreground border border-border/50 rounded-bl-none"
+                                "max-w-[75%] rounded-2xl px-3.5 py-2.5 shadow-sm",
+                                isMine
+                                    ? "bg-gradient-to-br from-blue-600/90 to-cyan-600/90 text-white rounded-br-sm"
+                                    : "bg-white/5 border border-white/5 text-card-foreground rounded-bl-sm"
                             )}>
-                                <p className="text-[15px] leading-relaxed break-words">{message.content}</p>
-                                <p className={clsx("text-[10px] mt-2 text-right opacity-70", isMine ? "text-indigo-200" : "text-muted-foreground")}>
+                                <MediaAttachment message={message} />
+                                {message.content && <p className="text-[13px] leading-relaxed break-words">{message.content}</p>}
+                                <p className={clsx("text-[9px] mt-1 text-right", isMine ? "text-white/40" : "text-muted-foreground/40")}>
                                     {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </p>
                             </div>
@@ -88,52 +96,31 @@ const ChatContainer = () => {
                 <div ref={messageEndRef} />
             </div>
 
-            {/* Input Area or Friendship Action */}
-            <div className="p-4 bg-background border-t border-border/50 backdrop-blur-lg">
+            {/* Input */}
+            <div className="p-3 border-t border-white/5 backdrop-blur-xl" style={{ background: 'rgba(0,0,0,0.15)' }}>
                 {selectedUser.friendshipStatus === 'FRIEND' ? (
-                    <form onSubmit={handleSendMessage} className="flex gap-2">
-                        <input
-                            type="text"
-                            placeholder="Type a message..."
-                            className="flex-1 bg-input/20 border border-border rounded-xl px-4 py-3 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-all"
-                            value={text}
-                            onChange={(e) => setText(e.target.value)}
-                            autoFocus
-                        />
-                        <button
-                            type="submit"
-                            disabled={!text.trim()}
-                            className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl px-4 flex items-center justify-center transition"
-                        >
-                            <Send className="size-5" />
-                        </button>
-                    </form>
+                    <MessageInput onSendMessage={sendMessage} placeholder="Type a message..." />
                 ) : selectedUser.friendshipStatus === 'PENDING_SENT' ? (
-                    <div className="text-center py-2 text-muted-foreground bg-white/5 rounded-xl border border-white/5">
+                    <div className="text-center py-2 text-[11px] text-muted-foreground/60 bg-white/[0.02] rounded-xl border border-white/5">
                         Friend request pending...
                     </div>
                 ) : selectedUser.friendshipStatus === 'PENDING_RECEIVED' ? (
-                    <div className="flex gap-4 justify-center py-2">
-                        <button
-                            onClick={() => useChatStore.getState().acceptFriendRequest(selectedUser.requestId)}
-                            className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-6 rounded-xl transition shadow-lg shadow-green-500/20"
-                        >
+                    <div className="flex gap-2 justify-center py-1.5">
+                        <button onClick={() => useChatStore.getState().acceptFriendRequest(selectedUser.requestId)}
+                            className="flex items-center gap-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs font-semibold py-2 px-4 rounded-xl shadow-md shadow-emerald-500/20 hover:shadow-emerald-500/40 transition-all hover:scale-[1.02] active:scale-[0.98]">
                             Accept Request
                         </button>
-                        <button
-                            onClick={() => useChatStore.getState().rejectFriendRequest(selectedUser.requestId)}
-                            className="bg-destructive/10 text-destructive hover:bg-destructive/20 font-medium py-2 px-6 rounded-xl transition"
-                        >
+                        <button onClick={() => useChatStore.getState().rejectFriendRequest(selectedUser.requestId)}
+                            className="bg-red-500/10 text-red-400 text-xs font-semibold py-2 px-4 rounded-xl hover:bg-red-500/20 transition">
                             Reject
                         </button>
                     </div>
                 ) : (
-                    <div className="flex justify-center py-2">
-                        <button
-                            onClick={() => useChatStore.getState().sendFriendRequest(selectedUser.id)}
-                            className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-8 rounded-xl transition shadow-lg shadow-indigo-500/30"
-                        >
-                            Add Friend to Chat
+                    <div className="flex justify-center py-1.5">
+                        <button onClick={() => useChatStore.getState().sendFriendRequest(selectedUser.id)}
+                            className="flex items-center gap-1.5 bg-gradient-to-r from-blue-600 to-cyan-600 text-white text-xs font-semibold py-2 px-5 rounded-xl shadow-md shadow-blue-500/20 hover:shadow-blue-500/40 transition-all hover:scale-[1.02] active:scale-[0.98]">
+                            <UserPlus className="size-3.5" />
+                            Add Friend
                         </button>
                     </div>
                 )}

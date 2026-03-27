@@ -1,6 +1,5 @@
 import prisma from '../lib/db.js';
 import { io } from '../lib/socket.js';
-import { evaluateGroupStory } from '../services/ai.service.js';
 
 export const getStoryLibrary = async (req, res) => {
     try {
@@ -50,7 +49,11 @@ export const getStoryDetails = async (req, res) => {
             include: {
                 entries: {
                     orderBy: { dayNumber: 'asc' },
-                    include: { user: { select: { username: true } } }
+                    include: { user: { select: { id: true, username: true } } }
+                },
+                members: {
+                    orderBy: { joinedAt: 'asc' },
+                    include: { user: { select: { id: true, username: true } } }
                 },
                 results: {
                     include: { winnerUser: { select: { username: true } } }
@@ -82,7 +85,16 @@ export const getMyActiveStory = async (req, res) => {
             },
             include: {
                 group: {
-                    include: { entries: { orderBy: { dayNumber: 'asc' }, include: { user: { select: { username: true } } } } }
+                    include: {
+                        entries: {
+                            orderBy: { dayNumber: 'asc' },
+                            include: { user: { select: { id: true, username: true } } }
+                        },
+                        members: {
+                            orderBy: { joinedAt: 'asc' },
+                            include: { user: { select: { id: true, username: true } } }
+                        }
+                    }
                 }
             }
         });
@@ -106,50 +118,37 @@ export const contributeToStory = async (req, res) => {
 
         const group = await prisma.storyGroup.findUnique({
             where: { id },
-            include: { entries: true }
+            include: {
+                entries: { orderBy: { dayNumber: 'asc' } },
+                members: { orderBy: { joinedAt: 'asc' } }
+            }
         });
 
         if (!group || group.status !== 'ACTIVE') {
             return res.status(400).json({ error: "Active story group not found" });
         }
 
-        const isMember = await prisma.storyGroupMember.findUnique({
-            where: { userId_groupId: { userId, groupId: id } }
-        });
-
-        if (!isMember) {
+        // Check membership
+        const memberIndex = group.members.findIndex(m => m.userId === userId);
+        if (memberIndex === -1) {
             return res.status(403).json({ error: "You are not part of this story group" });
         }
 
-        // Check turn rotation (User must wait for 4 other people)
-        if (group.entries.length > 0) {
-            // Get up to the last 4 entries
-            const lastEntries = group.entries.slice(-4);
+        // Enforce strict join-order turns (round-robin)
+        const currentTurnIndex = group.entries.length % group.members.length;
+        const currentTurnMember = group.members[currentTurnIndex];
 
-            // If the user's ID exists in any of the last 4 entries, they can't write yet
-            const userAlreadyWroteRecently = lastEntries.some(e => e.userId === userId);
-
-            if (userAlreadyWroteRecently) {
-                return res.status(400).json({ error: "It's not your turn yet! You must wait for the other 4 members to contribute." });
-            }
-
-            // Check if there was already an entry today (UTC)
-            const lastEntry = group.entries[group.entries.length - 1];
-            const lastEntryDate = new Date(lastEntry.createdAt);
-            const today = new Date();
-
-            if (lastEntryDate.getUTCFullYear() === today.getUTCFullYear() &&
-                lastEntryDate.getUTCMonth() === today.getUTCMonth() &&
-                lastEntryDate.getUTCDate() === today.getUTCDate()) {
-                return res.status(400).json({ error: "Only one entry can be added per day. Please wait until tomorrow." });
-            }
+        if (currentTurnMember.userId !== userId) {
+            const currentTurnUser = await prisma.user.findUnique({
+                where: { id: currentTurnMember.userId },
+                select: { username: true }
+            });
+            return res.status(400).json({
+                error: `It's ${currentTurnUser?.username || 'another member'}'s turn to write!`
+            });
         }
 
         const dayNumber = group.entries.length + 1;
-
-        if (dayNumber > 30) {
-            return res.status(400).json({ error: "Story reaches max 30 days" });
-        }
 
         const entry = await prisma.storyEntry.create({
             data: {
@@ -158,23 +157,50 @@ export const contributeToStory = async (req, res) => {
                 groupId: id,
                 userId
             },
-            include: { user: { select: { username: true } } }
+            include: { user: { select: { id: true, username: true } } }
         });
 
-        io.to(`story_${id}`).emit('newStoryEntry', entry);
+        // --- Daily Streak Tracking Logic ---
+        const currentUser = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { storyStreak: true, lastStoryDate: true }
+        });
 
-        // Check if story is now complete (Day 30)
-        if (dayNumber === 30) {
-            await prisma.storyGroup.update({
-                where: { id },
-                data: { status: 'EVALUATING' }
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const lastDate = currentUser?.lastStoryDate;
+
+        if (!lastDate) {
+            await prisma.user.update({
+                where: { id: userId },
+                data: { storyStreak: 1, lastStoryDate: now }
             });
-
-            // Trigger AI evaluation asynchronously
-            evaluateGroupStory(id).catch(err => console.error("AI Eval failed", err));
-
-            io.to(`story_${id}`).emit('story_completed', { groupId: id });
+        } else {
+            const lastDateStart = new Date(lastDate.getFullYear(), lastDate.getMonth(), lastDate.getDate());
+            const diffDays = Math.round(Math.abs(today - lastDateStart) / (1000 * 60 * 60 * 24));
+            
+            if (diffDays === 1) {
+                await prisma.user.update({
+                    where: { id: userId },
+                    data: { storyStreak: (currentUser.storyStreak || 0) + 1, lastStoryDate: now }
+                });
+            } else if (diffDays > 1) {
+                await prisma.user.update({
+                    where: { id: userId },
+                    data: { storyStreak: 1, lastStoryDate: now }
+                });
+            }
         }
+        // -----------------------------------
+
+        // Calculate and emit whose turn is next
+        const nextTurnIndex = (group.entries.length + 1) % group.members.length;
+        const nextTurnMember = group.members[nextTurnIndex];
+
+        io.to(`story_${id}`).emit('newStoryEntry', {
+            ...entry,
+            nextTurnUserId: nextTurnMember.userId
+        });
 
         res.status(201).json(entry);
     } catch (error) {

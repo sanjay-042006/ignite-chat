@@ -73,7 +73,8 @@ export const getInterestRoomMessages = async (req, res) => {
 
         const messages = await prisma.message.findMany({
             where: { roomId, roomType: 'INTEREST' },
-            orderBy: { createdAt: 'asc' }
+            orderBy: { createdAt: 'asc' },
+            include: { sender: { select: { username: true } } }
         });
 
         res.status(200).json(messages);
@@ -85,11 +86,11 @@ export const getInterestRoomMessages = async (req, res) => {
 
 export const sendInterestMessage = async (req, res) => {
     try {
-        const { text } = req.body;
+        const { text, mediaUrl, mediaType } = req.body;
         const { roomId } = req.params;
         const senderId = req.user.id;
 
-        if (!text) return res.status(400).json({ error: 'Text required' });
+        if (!text && !mediaUrl) return res.status(400).json({ error: 'Message content or media required' });
 
         // Verify membership
         const isMember = await prisma.interestRoomMember.findUnique({
@@ -106,9 +107,12 @@ export const sendInterestMessage = async (req, res) => {
             data: {
                 senderId,
                 roomId,
-                content: text,
+                content: text || null,
+                mediaUrl: mediaUrl || null,
+                mediaType: mediaType || null,
                 roomType: 'INTEREST',
-            }
+            },
+            include: { sender: { select: { username: true } } }
         });
 
         // Emit to room

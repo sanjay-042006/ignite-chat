@@ -2,11 +2,13 @@ import { useEffect, useRef, useState } from 'react';
 import { useGroupStore } from '../context/useGroupStore';
 import { useAuthStore } from '../context/useAuthStore';
 import { useSocketStore } from '../context/useSocketStore';
-import { Loader2, Send, Users, LogOut, Trash2, ChevronDown, ChevronUp, Crown } from 'lucide-react';
+import { Loader2, Send, Users, LogOut, Trash2, ChevronDown, ChevronUp, Crown, Camera, ArrowLeft } from 'lucide-react';
+import MessageInput from './chat/MessageInput';
+import { MediaAttachment } from './chat/MediaAttachment';
 import clsx from 'clsx';
 
 const GroupChatContainer = () => {
-    const { groupMessages, getGroupMessages, isGroupMessagesLoading, selectedGroup, subscribeToGroupMessages, unsubscribeFromGroupMessages, sendGroupMessage, leaveGroup, deleteGroup } = useGroupStore();
+    const { groupMessages, getGroupMessages, isGroupMessagesLoading, selectedGroup, subscribeToGroupMessages, unsubscribeFromGroupMessages, sendGroupMessage, leaveGroup, deleteGroup, updateGroupProfilePic, setSelectedGroup } = useGroupStore();
     const { authUser } = useAuthStore();
     const { onlineUsers } = useSocketStore();
     const [text, setText] = useState('');
@@ -17,126 +19,106 @@ const GroupChatContainer = () => {
     const isAdmin = myMembership?.isAdmin || false;
 
     useEffect(() => {
-        if (selectedGroup) {
-            getGroupMessages(selectedGroup.id);
-            subscribeToGroupMessages();
-        }
+        if (selectedGroup) { getGroupMessages(selectedGroup.id); subscribeToGroupMessages(); }
         return () => unsubscribeFromGroupMessages();
     }, [selectedGroup?.id, getGroupMessages, subscribeToGroupMessages, unsubscribeFromGroupMessages]);
 
     useEffect(() => {
-        if (messageEndRef.current && groupMessages) {
-            messageEndRef.current.scrollIntoView({ behavior: 'smooth' });
-        }
+        if (messageEndRef.current && groupMessages) messageEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }, [groupMessages]);
 
-    const handleSendMessage = async (e) => {
-        e.preventDefault();
-        if (!text.trim() || !selectedGroup) return;
 
-        await sendGroupMessage(selectedGroup.id, text.trim());
-        setText('');
-    };
 
-    const handleLeave = async () => {
-        if (!confirm('Are you sure you want to leave this group?')) return;
-        await leaveGroup(selectedGroup.id);
-    };
-
-    const handleDelete = async () => {
-        if (!confirm('Are you sure you want to delete this group? This cannot be undone.')) return;
-        await deleteGroup(selectedGroup.id);
-    };
-
-    if (isGroupMessagesLoading) {
-        return (
-            <div className="flex-1 flex flex-col items-center justify-center bg-background/50 h-full">
-                <Loader2 className="size-10 animate-spin text-indigo-500" />
-            </div>
-        );
-    }
+    if (isGroupMessagesLoading) return (
+        <div className="flex-1 flex items-center justify-center h-full">
+            <Loader2 className="size-8 animate-spin text-violet-500" />
+        </div>
+    );
 
     if (!selectedGroup) return null;
 
     return (
-        <div className="flex flex-col h-full bg-background/50 relative">
-            {/* Top Header */}
-            <div className="px-6 py-4 glass border-b border-white/5 sticky top-0 z-10 shadow-sm">
+        <div className="flex flex-col h-full relative" style={{ background: 'linear-gradient(180deg, rgba(139,92,246,0.02), transparent 30%)' }}>
+
+            {/* Header */}
+            <div className="px-4 py-2.5 pt-[calc(0.625rem+env(safe-area-inset-top,0px))] border-b border-white/5 sticky top-0 z-10 backdrop-blur-xl"
+                style={{ background: 'rgba(0,0,0,0.2)' }}>
                 <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <div className="size-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold shadow-md border-2 border-background">
-                            <Users className="size-5" />
+                    <div className="flex items-center gap-2 lg:gap-3">
+                        <button onClick={() => setSelectedGroup(null)} className="md:hidden p-1.5 -ml-1 rounded-lg hover:bg-white/5 text-muted-foreground mr-1">
+                            <ArrowLeft className="size-4" />
+                        </button>
+                        <div className="flex items-center gap-3 cursor-pointer group" onClick={() => setShowMembers(!showMembers)}>
+                        <div className="relative">
+                            {selectedGroup.profilePic ? (
+                                <img src={selectedGroup.profilePic} alt={selectedGroup.name} className="size-10 rounded-xl object-cover shadow-md shadow-violet-500/20 ring-2 ring-violet-500/10" />
+                            ) : (
+                                <div className="size-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white shadow-md shadow-violet-500/20 ring-2 ring-violet-500/10">
+                                    <Users className="size-5" />
+                                </div>
+                            )}
+                            
+                            {isAdmin && (
+                                <label onClick={(e) => e.stopPropagation()} className="absolute -bottom-1 -right-1 size-5 bg-background text-muted-foreground hover:text-foreground rounded-full border border-white/10 shadow-sm flex items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                                    <Camera className="w-2.5 h-2.5" />
+                                    <input type="file" className="hidden" accept="image/*" onChange={(e) => {
+                                        const file = e.target.files[0];
+                                        if (file) {
+                                            const reader = new FileReader();
+                                            reader.onloadend = () => updateGroupProfilePic(selectedGroup.id, reader.result);
+                                            reader.readAsDataURL(file);
+                                        }
+                                    }} />
+                                </label>
+                            )}
                         </div>
-                        <div>
-                            <h3 className="font-semibold">{selectedGroup.name}</h3>
-                            <p className="text-xs text-muted-foreground">{selectedGroup.members?.length || 0} members</p>
+                        <div className="flex flex-col items-start transition-opacity hover:opacity-80">
+                            <h3 className="font-semibold text-sm flex items-center gap-1">
+                                {selectedGroup.name}
+                                {showMembers ? <ChevronUp className="size-3 text-muted-foreground" /> : <ChevronDown className="size-3 text-muted-foreground" />}
+                            </h3>
+                            <p className="text-[10px] text-muted-foreground/50 font-medium">{selectedGroup.members?.length || 0} members</p>
                         </div>
                     </div>
+                </div>
 
-                    <div className="flex items-center gap-2">
-                        {/* Toggle Members Panel */}
-                        <button
-                            onClick={() => setShowMembers(!showMembers)}
-                            className="p-2 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-foreground transition"
-                            title="View members"
-                        >
-                            <Users className="size-4" />
-                            {showMembers ? <ChevronUp className="size-3 inline ml-0.5" /> : <ChevronDown className="size-3 inline ml-0.5" />}
+                <div className="flex items-center gap-1">
+
+                        <button onClick={() => { if (confirm('Leave this group?')) leaveGroup(selectedGroup.id); }}
+                            className="p-1.5 rounded-lg hover:bg-red-500/10 text-muted-foreground/50 hover:text-red-400 transition" title="Leave">
+                            <LogOut className="size-3.5" />
                         </button>
-
-                        {/* Leave Group */}
-                        <button
-                            onClick={handleLeave}
-                            className="p-2 rounded-lg hover:bg-red-500/10 text-muted-foreground hover:text-red-400 transition"
-                            title="Leave group"
-                        >
-                            <LogOut className="size-4" />
-                        </button>
-
-                        {/* Delete Group (admin only) */}
                         {isAdmin && (
-                            <button
-                                onClick={handleDelete}
-                                className="p-2 rounded-lg hover:bg-red-500/10 text-muted-foreground hover:text-red-400 transition"
-                                title="Delete group"
-                            >
-                                <Trash2 className="size-4" />
+                            <button onClick={() => { if (confirm(`Delete "${selectedGroup.name}"?`)) deleteGroup(selectedGroup.id); }}
+                                className="p-1.5 rounded-lg hover:bg-red-500/10 text-muted-foreground/50 hover:text-red-400 transition" title="Delete">
+                                <Trash2 className="size-3.5" />
                             </button>
                         )}
                     </div>
                 </div>
 
-                {/* Members Panel (collapsible) */}
+                {/* Members Panel */}
                 {showMembers && (
-                    <div className="mt-3 pt-3 border-t border-white/5 animate-in slide-in-from-top-2 duration-200">
-                        <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">Members</p>
-                        <div className="space-y-1 max-h-40 overflow-y-auto">
+                    <div className="mt-2 pt-2 border-t border-white/5 animate-slide-up">
+                        <p className="text-[9px] font-bold uppercase text-muted-foreground/40 tracking-widest mb-1.5 ml-0.5">Members</p>
+                        <div className="space-y-0.5 max-h-36 overflow-y-auto">
                             {selectedGroup.members?.map((member) => (
-                                <div key={member.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition">
-                                    <div className="relative">
-                                        <div className="size-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                                            {member.user?.username?.charAt(0).toUpperCase() || '?'}
-                                        </div>
-                                        {onlineUsers.includes(member.userId) ? (
-                                            <span className="absolute -bottom-0.5 -right-0.5 size-2.5 bg-green-500 border-2 border-background rounded-full" />
+                                <div key={member.id} className="flex items-center gap-2.5 p-1.5 rounded-lg hover:bg-white/[0.03] transition">
+                                    <div className="relative shrink-0">
+                                        {member.user?.profilePic ? (
+                                            <img src={member.user.profilePic} alt={member.user.username} className="size-6 rounded-full object-cover border border-white/10" />
                                         ) : (
-                                            <span className="absolute -bottom-0.5 -right-0.5 size-2.5 bg-zinc-500 border-2 border-background rounded-full" />
+                                            <div className="size-6 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white text-[9px] font-bold">
+                                                {member.user?.username?.charAt(0).toUpperCase() || '?'}
+                                            </div>
                                         )}
+                                        <span className={clsx("absolute -bottom-0.5 -right-0.5 size-2 border border-background rounded-full",
+                                            onlineUsers.includes(member.userId) ? "bg-emerald-400" : "bg-zinc-600"
+                                        )} />
                                     </div>
-                                    <div className="flex items-center gap-2 min-w-0">
-                                        <span className="text-sm font-medium truncate">
-                                            {member.user?.username || 'Unknown'}
-                                        </span>
-                                        {member.isAdmin && (
-                                            <Crown className="size-3.5 text-amber-400 shrink-0" />
-                                        )}
-                                        {member.userId === authUser.id && (
-                                            <span className="text-[10px] text-muted-foreground">(you)</span>
-                                        )}
-                                    </div>
-                                    <span className="ml-auto text-[10px] text-muted-foreground">
-                                        {onlineUsers.includes(member.userId) ? 'Online' : 'Offline'}
-                                    </span>
+                                    <span className="text-[11px] font-medium truncate">{member.user?.username || 'Unknown'}</span>
+                                    {member.isAdmin && <Crown className="size-3 text-amber-400 shrink-0" />}
+                                    {member.userId === authUser.id && <span className="text-[9px] text-muted-foreground/40">(you)</span>}
                                 </div>
                             ))}
                         </div>
@@ -144,29 +126,37 @@ const GroupChatContainer = () => {
                 )}
             </div>
 
-            {/* Chat History Area */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-6">
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto p-3 space-y-3">
+                {groupMessages.length === 0 && (
+                    <div className="flex flex-col items-center justify-center h-full text-center">
+                        <div className="size-12 rounded-xl bg-violet-500/5 flex items-center justify-center mb-3">
+                            <Users className="size-5 text-violet-500/20" />
+                        </div>
+                        <p className="text-xs text-muted-foreground">Start chatting in {selectedGroup.name}!</p>
+                    </div>
+                )}
+
                 {groupMessages.map((message) => {
                     const isMine = message.senderId === authUser.id;
                     const senderName = message.sender?.username || 'Unknown';
                     return (
-                        <div key={message.id} className={clsx("flex w-full", isMine ? "justify-end" : "justify-start")}>
+                        <div key={message.id} className={clsx("flex w-full gap-2", isMine ? "justify-end" : "justify-start")}>
                             {!isMine && (
-                                <div className="size-8 rounded-full bg-indigo-500 flex items-center justify-center text-white text-xs font-bold mr-2 mt-auto" title={senderName}>
+                                <div className="size-6 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white text-[10px] font-bold mt-auto shrink-0" title={senderName}>
                                     {senderName.charAt(0).toUpperCase()}
                                 </div>
                             )}
                             <div className={clsx(
-                                "max-w-[70%] rounded-2xl p-4 shadow-sm backdrop-blur-sm",
-                                isMine ? "bg-indigo-600 font-medium text-white border border-indigo-500/50 rounded-br-none"
-                                    : "bg-card text-card-foreground border border-border/50 rounded-bl-none"
+                                "max-w-[75%] rounded-2xl px-3.5 py-2.5 shadow-sm",
+                                isMine
+                                    ? "bg-gradient-to-br from-violet-600/90 to-purple-600/90 text-white rounded-br-sm"
+                                    : "bg-white/5 border border-white/5 text-card-foreground rounded-bl-sm"
                             )}>
-                                {/* Name Tag for Group Members */}
-                                {!isMine && (
-                                    <p className="text-xs font-bold text-indigo-400 mb-1">{senderName}</p>
-                                )}
-                                <p className="text-[15px] leading-relaxed break-words">{message.content}</p>
-                                <p className={clsx("text-[10px] mt-2 text-right opacity-70", isMine ? "text-indigo-200" : "text-muted-foreground")}>
+                                {!isMine && <p className="text-[10px] font-semibold text-violet-400/70 mb-0.5">{senderName}</p>}
+                                <MediaAttachment message={message} />
+                                {message.content && <p className="text-[13px] leading-relaxed break-words">{message.content}</p>}
+                                <p className={clsx("text-[9px] mt-1 text-right", isMine ? "text-white/40" : "text-muted-foreground/40")}>
                                     {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </p>
                             </div>
@@ -176,25 +166,9 @@ const GroupChatContainer = () => {
                 <div ref={messageEndRef} />
             </div>
 
-            {/* Input Area */}
-            <div className="p-4 bg-background border-t border-border/50 backdrop-blur-lg">
-                <form onSubmit={handleSendMessage} className="flex gap-2">
-                    <input
-                        type="text"
-                        placeholder="Message group..."
-                        className="flex-1 bg-input/20 border border-border rounded-xl px-4 py-3 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-all"
-                        value={text}
-                        onChange={(e) => setText(e.target.value)}
-                        autoFocus
-                    />
-                    <button
-                        type="submit"
-                        disabled={!text.trim()}
-                        className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl px-4 flex items-center justify-center transition"
-                    >
-                        <Send className="size-5" />
-                    </button>
-                </form>
+            {/* Input */}
+            <div className="p-3 border-t border-white/5 backdrop-blur-xl" style={{ background: 'rgba(0,0,0,0.15)' }}>
+                <MessageInput onSendMessage={(data) => sendGroupMessage(selectedGroup.id, data)} placeholder="Message group..." />
             </div>
         </div>
     );

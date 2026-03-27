@@ -1,32 +1,65 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStoryStore } from '../context/useStoryStore';
-import { Loader2, ArrowLeft, Trophy, BookOpen, Clock, CalendarDays, User, Send } from 'lucide-react';
+import { useAuthStore } from '../context/useAuthStore';
+import { Loader2, ArrowLeft, Trophy, BookOpen, Clock, CalendarDays, User, Send, Timer, Users, PenLine, UserPlus } from 'lucide-react';
 import clsx from 'clsx';
+import { useChatStore } from '../context/useChatStore';
+import toast from 'react-hot-toast';
 
 const StoryDetailPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { fetchStoryDetails, focusedStory, isFocusedLoading, activeStory, contribute, isContributing } = useStoryStore();
+    const { fetchStoryDetails, focusedStory, isFocusedLoading, activeStory, contribute, isContributing, getCurrentTurnUserId, getCurrentTurnUsername } = useStoryStore();
+    const { authUser } = useAuthStore();
+    const { sendFriendRequest } = useChatStore();
     const [text, setText] = useState('');
 
+    useEffect(() => { fetchStoryDetails(id); }, [id, fetchStoryDetails]);
+
+    // Countdown timer for active stories
+    const [timeLeft, setTimeLeft] = useState('');
     useEffect(() => {
-        fetchStoryDetails(id);
-    }, [id, fetchStoryDetails]);
+        if (!focusedStory || focusedStory.status !== 'ACTIVE') return;
+
+        const updateTimer = () => {
+            const end = new Date(focusedStory.endDate).getTime();
+            const now = Date.now();
+            const diff = end - now;
+
+            if (diff <= 0) {
+                setTimeLeft('Completing...');
+                return;
+            }
+
+            const hours = Math.floor(diff / 3600000);
+            const mins = Math.floor((diff % 3600000) / 60000);
+            const secs = Math.floor((diff % 60000) / 1000);
+            
+            if (hours > 0) {
+                setTimeLeft(`${hours}h ${mins}m`);
+            } else {
+                setTimeLeft(`${mins}:${secs.toString().padStart(2, '0')}`);
+            }
+        };
+
+        updateTimer();
+        const interval = setInterval(updateTimer, 1000);
+        return () => clearInterval(interval);
+    }, [focusedStory]);
 
     const handleContribute = async (e) => {
         e.preventDefault();
         if (!text.trim()) return;
         await contribute(text.trim());
         setText('');
-        // The socket listener handles adding it to `activeStory.entries`
     };
 
     if (isFocusedLoading || !focusedStory) {
         return (
-            <div className="flex-1 flex flex-col items-center justify-center p-6 lg:p-12 h-full bg-background/50">
-                <Loader2 className="w-10 h-10 animate-spin text-cyan-400 mb-4" />
-                <p className="text-muted-foreground animate-pulse">Loading story chapters...</p>
+            <div className="flex-1 flex flex-col items-center justify-center h-full">
+                <Loader2 className="size-8 animate-spin text-fuchsia-500 mb-3" />
+                <p className="text-xs text-muted-foreground animate-pulse">Loading story...</p>
             </div>
         );
     }
@@ -35,133 +68,177 @@ const StoryDetailPage = () => {
     const isEvaluating = focusedStory.status === 'EVALUATING';
     const isCompleted = focusedStory.status === 'COMPLETED';
     const isMyActiveStory = activeStory?.id === focusedStory.id;
-
-    const winnerResult = focusedStory.results?.[0]; // Group level winner
+    const winnerResult = focusedStory.results?.[0];
     const globalResult = focusedStory.globalResults?.[0];
 
+    // Turn logic
+    const currentTurnUserId = isMyActiveStory ? getCurrentTurnUserId() : null;
+    const currentTurnUsername = isMyActiveStory ? getCurrentTurnUsername() : null;
+    const isMyTurn = currentTurnUserId && authUser?.id === currentTurnUserId;
+
+    // Members list (for showing order)
+    const members = isMyActiveStory ? activeStory.members : focusedStory.members;
+    const entries = isMyActiveStory ? activeStory.entries : focusedStory.entries;
+
     return (
-        <div className="w-full h-full flex flex-col bg-background/50 relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-background to-purple-500/10 backdrop-blur-3xl -z-10" />
+        <div className="w-full h-full flex flex-col relative overflow-hidden pb-16 md:pb-0">
+            <div className="absolute top-1/4 left-1/3 w-72 h-72 bg-fuchsia-500/[0.04] rounded-full blur-[100px] animate-glow-pulse" />
+            <div className="absolute bottom-1/3 right-1/4 w-80 h-80 bg-pink-500/[0.03] rounded-full blur-[100px] animate-glow-pulse" style={{ animationDelay: '1s' }} />
 
-            {/* Top Navigation Bar */}
-            <div className="px-6 py-4 glass border-b border-white/5 flex items-center justify-between sticky top-0 z-20 shadow-sm backdrop-blur-xl">
-                <button
-                    onClick={() => navigate('/library')}
-                    className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition bg-white/5 hover:bg-white/10 px-4 py-2 rounded-xl"
-                >
-                    <ArrowLeft className="size-4" /> Back to Library
+            {/* Header */}
+            <div className="px-4 py-2.5 border-b border-white/5 flex items-center justify-between sticky top-0 z-20 backdrop-blur-xl" style={{ background: 'rgba(0,0,0,0.2)' }}>
+                <button onClick={() => navigate('/library')}
+                    className="flex items-center gap-1.5 text-muted-foreground/70 hover:text-foreground text-xs font-medium transition px-2.5 py-1.5 rounded-lg hover:bg-white/5">
+                    <ArrowLeft className="size-3.5" /> Library
                 </button>
-
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                     {focusedStory.isGlobalWinner && (
-                        <span className="bg-amber-500/20 text-amber-500 text-xs font-bold py-1.5 px-4 rounded-full border border-amber-500/30 flex items-center gap-2 shadow-lg shadow-amber-500/10">
-                            <Trophy className="size-3" /> Global Winner
+                        <span className="bg-amber-500/15 text-amber-400 text-[9px] font-bold py-1 px-2.5 rounded-full border border-amber-500/20 flex items-center gap-1">
+                            <Trophy className="size-2.5" /> Winner
                         </span>
                     )}
-                    <span className={clsx("text-xs font-bold py-1.5 px-4 rounded-full border flex items-center gap-2",
-                        isActive ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" :
-                            isEvaluating ? "bg-yellow-500/10 text-yellow-400 border-yellow-500/20" :
-                                "bg-indigo-500/10 text-indigo-400 border-indigo-500/20"
+                    {isActive && timeLeft && (
+                        <span className={clsx("text-[9px] font-bold py-1 px-2.5 rounded-full border flex items-center gap-1",
+                            timeLeft === 'Completing...' ? "bg-amber-500/10 text-amber-400 border-amber-500/15 animate-pulse" : "bg-cyan-500/10 text-cyan-400 border-cyan-500/15"
+                        )}>
+                            <Timer className="size-2.5" /> {timeLeft}
+                        </span>
+                    )}
+                    <span className={clsx("text-[9px] font-bold py-1 px-2.5 rounded-full border flex items-center gap-1",
+                        isActive ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/15"
+                            : isEvaluating ? "bg-amber-500/10 text-amber-400 border-amber-500/15"
+                                : "bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/15"
                     )}>
-                        <Clock className="size-3" /> {focusedStory.status}
+                        <Clock className="size-2.5" /> {focusedStory.status}
                     </span>
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto w-full">
-                <div className="max-w-4xl mx-auto p-6 lg:p-12 space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-700">
+            <div className="flex-1 overflow-y-auto w-full relative z-10">
+                <div className="max-w-3xl mx-auto p-5 lg:p-8 space-y-8 animate-slide-up">
 
                     {/* Story Header */}
-                    <div className="text-center space-y-6 pt-4">
-                        <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 shadow-xl shadow-indigo-500/10 mb-4">
-                            <BookOpen className="size-8" />
+                    <div className="text-center space-y-4 pt-2">
+                        <div className="size-12 rounded-2xl bg-gradient-to-br from-fuchsia-500 to-pink-600 flex items-center justify-center mx-auto shadow-lg shadow-fuchsia-500/20">
+                            <BookOpen className="size-6 text-white" />
                         </div>
-                        <h1 className="text-4xl md:text-6xl font-black tracking-tight leading-tight">
-                            {focusedStory.title || "The Unwritten Tale"}
-                        </h1>
-                        <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground font-medium">
-                            <span className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-lg border border-white/10">
-                                <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span> {focusedStory.genre}
+                        <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">{focusedStory.title || "The Unwritten Tale"}</h1>
+                        <div className="flex flex-wrap items-center justify-center gap-2 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1 bg-white/[0.03] px-2.5 py-1 rounded-lg border border-white/5">
+                                <span className="size-1.5 rounded-full bg-fuchsia-400 animate-pulse" /> {focusedStory.genre}
                             </span>
-                            <span className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-lg border border-white/10">
-                                <CalendarDays className="size-4" /> {new Date(focusedStory.startDate).toLocaleDateString()}
+                            <span className="flex items-center gap-1 bg-white/[0.03] px-2.5 py-1 rounded-lg border border-white/5">
+                                <CalendarDays className="size-3" /> {new Date(focusedStory.startDate).toLocaleDateString()}
                             </span>
                         </div>
                     </div>
 
-                    {/* Global AI Review */}
-                    {globalResult && (
-                        <div className="p-8 rounded-3xl bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-transparent border border-amber-500/20 relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
-                                <Trophy className="size-24 text-amber-500" />
-                            </div>
-                            <h3 className="text-xl font-bold text-amber-500 mb-2 flex items-center gap-2">
-                                <Trophy className="size-5" /> Global Judging Panel
+                    {/* Member Order — shows the writing rotation */}
+                    {members && members.length > 0 && isActive && (
+                        <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5">
+                            <h3 className="text-xs font-bold mb-3 flex items-center gap-1.5 text-fuchsia-400/80">
+                                <Users className="size-3.5" /> Writing Order
                             </h3>
-                            <p className="text-foreground/90 leading-relaxed text-lg mb-4 italic">
-                                "{globalResult.aiExplanation}"
-                            </p>
-                            <div className="inline-flex items-center gap-2 bg-amber-500/20 text-amber-400 font-black px-4 py-2 rounded-xl text-sm">
-                                Score: {globalResult.storyScore} / 100
+                            <div className="flex flex-wrap gap-2">
+                                {members.map((member, idx) => {
+                                    const isTurn = currentTurnUserId === member.user.id;
+                                    const isMe = authUser?.id === member.user.id;
+                                    return (
+                                        <div key={member.id}
+                                            className={clsx(
+                                                "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-medium border transition-all",
+                                                isTurn
+                                                    ? "bg-gradient-to-r from-fuchsia-500/20 to-pink-500/20 border-fuchsia-500/30 text-fuchsia-300 shadow-md shadow-fuchsia-500/10 scale-105"
+                                                    : "bg-white/[0.02] border-white/5 text-muted-foreground/60"
+                                            )}>
+                                            <span className={clsx(
+                                                "size-5 rounded-full flex items-center justify-center text-[9px] font-bold",
+                                                isTurn ? "bg-fuchsia-500 text-white" : "bg-white/10 text-muted-foreground/50"
+                                            )}>{idx + 1}</span>
+                                            <span className="flex items-center gap-1 group/friend">
+                                                {member.user.username}
+                                                {!isMe && (
+                                                    <button onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        sendFriendRequest(member.userId);
+                                                        toast.success(`Friend request sent to ${member.user.username}!`);
+                                                    }} className="opacity-0 group-hover/friend:opacity-100 transition-opacity p-0.5 rounded hover:bg-white/10 text-fuchsia-300" title="Add Friend">
+                                                        <UserPlus className="size-3" />
+                                                    </button>
+                                                )}
+                                            </span>
+                                            {isMe && <span className="text-[8px] text-fuchsia-400/60">(you)</span>}
+                                            {isTurn && <PenLine className="size-3 text-fuchsia-400 animate-pulse" />}
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                     )}
 
-                    {/* The Complete Story (when finished) */}
-                    {isCompleted && focusedStory.formattedStory && (
-                        <div className="p-8 md:p-12 rounded-3xl bg-gradient-to-b from-white/5 to-transparent border border-white/10 shadow-2xl relative">
-                            <h3 className="text-2xl font-black mb-8 flex items-center gap-3 text-indigo-400">
-                                <BookOpen className="size-6" /> The Complete Story
+                    {/* Global AI Review */}
+                    {globalResult && (
+                        <div className="p-5 rounded-2xl border border-amber-500/15 relative overflow-hidden"
+                            style={{ background: 'linear-gradient(135deg, rgba(245,158,11,0.06), rgba(249,115,22,0.03))' }}>
+                            <Trophy className="absolute top-3 right-3 size-12 text-amber-500/[0.06]" />
+                            <h3 className="text-sm font-bold text-amber-400 mb-2 flex items-center gap-1.5">
+                                <Trophy className="size-3.5" /> Global Judging
                             </h3>
-                            <div className="prose prose-invert max-w-none prose-lg md:prose-xl prose-p:leading-relaxed text-foreground/90 whitespace-pre-wrap font-serif">
+                            <p className="text-xs text-foreground/60 italic mb-3 leading-relaxed">"{globalResult.aiExplanation}"</p>
+                            <span className="bg-amber-500/15 text-amber-400 text-[10px] font-bold px-2.5 py-1 rounded-lg">
+                                Score: {globalResult.storyScore}/100
+                            </span>
+                        </div>
+                    )}
+
+                    {/* Full Story */}
+                    {isCompleted && focusedStory.formattedStory && (
+                        <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5">
+                            <h3 className="text-sm font-bold mb-4 flex items-center gap-2 text-fuchsia-400">
+                                <BookOpen className="size-4" /> The Complete Story
+                            </h3>
+                            <div className="text-sm text-foreground/70 leading-relaxed whitespace-pre-wrap">
                                 {focusedStory.formattedStory}
                             </div>
                         </div>
                     )}
 
                     {/* Timeline */}
-                    <div className="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-white/10 before:to-transparent">
-
-                        {(isMyActiveStory ? activeStory.entries : focusedStory.entries).map((entry, idx) => {
+                    <div className="space-y-4 relative before:absolute before:inset-0 before:ml-4 before:-translate-x-px before:h-full before:w-px before:bg-gradient-to-b before:from-transparent before:via-white/[0.06] before:to-transparent">
+                        {(entries || []).map((entry) => {
                             const isWinningEntry = winnerResult && winnerResult.winnerUserId === entry.userId;
-
                             return (
-                                <div key={entry.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-                                    {/* Timeline dot */}
+                                <div key={entry.id} className="relative flex gap-4 pl-2">
                                     <div className={clsx(
-                                        "flex items-center justify-center w-10 h-10 rounded-full border-4 border-background shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow-xl z-10 transition-transform duration-300 hover:scale-125",
-                                        isWinningEntry ? "bg-amber-500" : "bg-indigo-500"
+                                        "size-8 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0 z-10 shadow-md",
+                                        isWinningEntry ? "bg-gradient-to-br from-amber-400 to-orange-500 shadow-amber-500/20" : "bg-gradient-to-br from-fuchsia-500 to-pink-600 shadow-fuchsia-500/20"
                                     )}>
-                                        <span className="text-xs font-bold text-white">{entry.dayNumber}</span>
+                                        {entry.dayNumber}
                                     </div>
-
-                                    {/* Content Card */}
-                                    <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-6 rounded-2xl glass hover:bg-white/5 border transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 relative"
-                                        style={{ borderColor: isWinningEntry ? 'rgba(245, 158, 11, 0.4)' : 'rgba(255,255,255,0.05)' }}>
-
-                                        {/* Connector tail */}
-                                        <div className={clsx(
-                                            "absolute top-5 w-4 h-4 rotate-45 border-t border-r border-white/5 bg-card/50 backdrop-blur-md -z-10 hidden md:block",
-                                            "group-odd:-left-2 group-odd:-border-l group-odd:border-r-0 group-odd:border-b",
-                                            "group-even:-right-2"
-                                        )} />
-
-                                        <div className="flex items-center justify-between mb-4">
-                                            <div className="flex items-center gap-2 text-sm text-indigo-400 font-bold bg-indigo-500/10 px-3 py-1 rounded-full w-fit">
-                                                <User className="size-3" /> {entry.user?.username || 'Anonymous Writer'}
-                                            </div>
-                                            <span className="text-xs text-muted-foreground font-medium">Day {entry.dayNumber}/30</span>
+                                    <div className={clsx("flex-1 p-4 rounded-2xl bg-white/[0.02] border transition hover:bg-white/[0.04]",
+                                        isWinningEntry ? "border-amber-500/20" : "border-white/5"
+                                    )}>
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="flex items-center gap-1 text-[10px] font-semibold text-fuchsia-400/70 bg-fuchsia-500/10 px-2 py-0.5 rounded-md group/timeline">
+                                                <User className="size-2.5" /> {entry.user?.username || 'Anonymous'}
+                                                {entry.userId !== authUser?.id && (
+                                                    <button onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        sendFriendRequest(entry.userId);
+                                                        toast.success(`Friend request sent to ${entry.user?.username || 'them'}!`);
+                                                    }} className="opacity-0 group-hover/timeline:opacity-100 transition-opacity ml-1 hover:text-fuchsia-300" title="Add Friend">
+                                                        <UserPlus className="size-2.5" />
+                                                    </button>
+                                                )}
+                                            </span>
+                                            <span className="text-[9px] text-muted-foreground/60">Entry {entry.dayNumber}</span>
                                         </div>
-
-                                        <p className="text-foreground/90 leading-relaxed text-[15px] whitespace-pre-wrap">{entry.content}</p>
-
+                                        <p className="text-xs text-foreground/70 leading-relaxed whitespace-pre-wrap">{entry.content}</p>
                                         {isWinningEntry && (
-                                            <div className="mt-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20">
-                                                <div className="text-amber-500 font-bold text-sm mb-2 flex items-center gap-2">
-                                                    <Trophy className="size-4" /> Group Winner
-                                                </div>
-                                                <p className="text-xs text-amber-500/80 italic">"{winnerResult.aiExplanation}"</p>
-                                                <p className="text-xs font-semibold text-amber-400 mt-2">✨ Best Moment: {winnerResult.bestTurningPoint}</p>
+                                            <div className="mt-3 p-3 rounded-xl border border-amber-500/15" style={{ background: 'rgba(245,158,11,0.05)' }}>
+                                                <p className="text-amber-400 font-bold text-[10px] mb-1 flex items-center gap-1"><Trophy className="size-3" /> Best Contributor</p>
+                                                <p className="text-[10px] text-amber-400/60 italic">"{winnerResult.aiExplanation}"</p>
+                                                {winnerResult.bestTurningPoint && <p className="text-[10px] font-medium text-amber-400/80 mt-1">✨ {winnerResult.bestTurningPoint}</p>}
                                             </div>
                                         )}
                                     </div>
@@ -170,56 +247,49 @@ const StoryDetailPage = () => {
                         })}
                     </div>
 
-                    {/* Status Indicator at the bottom */}
-                    <div className="flex justify-center pt-8 pb-12">
+                    {/* Status indicators */}
+                    <div className="flex justify-center py-6">
                         {isEvaluating && (
-                            <div className="glass px-6 py-4 rounded-2xl border border-yellow-500/20 flex items-center gap-4 animate-pulse">
-                                <Loader2 className="size-6 text-yellow-500 animate-spin" />
-                                <div className="text-left">
-                                    <p className="text-yellow-500 font-bold text-sm">Evaluating Story...</p>
-                                    <p className="text-muted-foreground text-xs">AI is currently judging the contributors.</p>
-                                </div>
+                            <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-amber-500/5 border border-amber-500/10 animate-pulse">
+                                <Loader2 className="size-4 text-amber-400 animate-spin" />
+                                <div><p className="text-amber-400 font-bold text-xs">Evaluating...</p><p className="text-[10px] text-muted-foreground/50">AI is formatting your story</p></div>
                             </div>
                         )}
                         {isCompleted && !winnerResult && (
-                            <div className="glass px-6 py-4 rounded-2xl border border-emerald-500/20 flex items-center gap-4">
-                                <div className="size-10 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-500">
-                                    <BookOpen className="size-5" />
-                                </div>
-                                <div className="text-left">
-                                    <p className="text-emerald-400 font-bold text-sm">Story Completed</p>
-                                    <p className="text-muted-foreground text-xs">A 30-day journey has come to an end.</p>
-                                </div>
+                            <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
+                                <BookOpen className="size-4 text-emerald-400" />
+                                <div><p className="text-emerald-400 font-bold text-xs">Completed</p><p className="text-[10px] text-muted-foreground/50">Story has been finalized</p></div>
                             </div>
                         )}
                     </div>
                 </div>
             </div>
 
-            {/* Input Area (Only if Active and User is Member) */}
+            {/* Input — only visible to the member whose turn it is */}
             {isMyActiveStory && isActive && (
-                <div className="p-4 bg-background/80 border-t border-border/50 backdrop-blur-xl z-20">
-                    <form onSubmit={handleContribute} className="max-w-4xl mx-auto flex gap-3">
-                        <textarea
-                            placeholder={`Write day ${activeStory.entries?.length + 1}'s contribution...`}
-                            className="flex-1 min-h-[50px] max-h-[150px] bg-input/40 border border-border rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all resize-none text-[15px]"
-                            value={text}
-                            onChange={(e) => setText(e.target.value)}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter' && !e.shiftKey) {
-                                    e.preventDefault();
-                                    handleContribute(e);
-                                }
-                            }}
-                        />
-                        <button
-                            type="submit"
-                            disabled={!text.trim() || isContributing}
-                            className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-2xl px-6 flex items-center justify-center transition shadow-lg shadow-indigo-500/25 h-auto min-h-[50px]"
-                        >
-                            {isContributing ? <Loader2 className="size-5 animate-spin" /> : <Send className="size-5" />}
-                        </button>
-                    </form>
+                <div className="p-3 border-t border-white/5 backdrop-blur-xl z-20" style={{ background: 'rgba(0,0,0,0.15)' }}>
+                    {isMyTurn ? (
+                        <form onSubmit={handleContribute} className="max-w-3xl mx-auto flex gap-2">
+                            <textarea
+                                placeholder="It's your turn! Continue the story..."
+                                className="flex-1 min-h-[44px] max-h-[120px] bg-white/5 border border-white/5 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-fuchsia-500/40 transition resize-none placeholder:text-muted-foreground/30"
+                                value={text}
+                                onChange={(e) => setText(e.target.value)}
+                                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleContribute(e); } }}
+                            />
+                            <button type="submit" disabled={!text.trim() || isContributing}
+                                className="bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-500 hover:to-pink-500 disabled:opacity-30 text-white rounded-xl px-3.5 flex items-center justify-center shadow-md shadow-fuchsia-500/20 transition-all h-auto min-h-[44px]">
+                                {isContributing ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
+                            </button>
+                        </form>
+                    ) : (
+                        <div className="max-w-3xl mx-auto text-center py-2">
+                            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground/60">
+                                <Loader2 className="size-3.5 animate-spin text-fuchsia-400/50" />
+                                <span>Waiting for <strong className="text-fuchsia-400/80">{currentTurnUsername}</strong> to write...</span>
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
         </div>

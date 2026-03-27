@@ -1,65 +1,49 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
 
 :root {
   --background: #ffffff;
   --foreground: #020817;
-  
   --card: #ffffff;
   --card-foreground: #020817;
-  
   --popover: #ffffff;
   --popover-foreground: #020817;
-  
   --primary: #0f172a;
   --primary-foreground: #f8fafc;
-  
   --secondary: #f1f5f9;
   --secondary-foreground: #0f172a;
-  
   --muted: #f1f5f9;
   --muted-foreground: #64748b;
-  
   --accent: #f1f5f9;
   --accent-foreground: #0f172a;
-  
   --destructive: #ef4444;
   --destructive-foreground: #f8fafc;
-
   --border: #e2e8f0;
   --input: #e2e8f0;
   --ring: #94a3b8;
-
   --radius: 0.5rem;
 }
 
 .dark {
-  --background: #020817;
-  --foreground: #f8fafc;
-  
-  --card: #0f172a;
-  --card-foreground: #f8fafc;
-  
-  --popover: #020817;
-  --popover-foreground: #f8fafc;
-  
-  --primary: #f8fafc;
-  --primary-foreground: #0f172a;
-  
-  --secondary: #1e293b;
-  --secondary-foreground: #f8fafc;
-  
-  --muted: #1e293b;
-  --muted-foreground: #94a3b8;
-  
-  --accent: #1e293b;
-  --accent-foreground: #f8fafc;
-  
+  --background: #05070e;
+  --foreground: #f0f2f8;
+  --card: #0c1120;
+  --card-foreground: #f0f2f8;
+  --popover: #05070e;
+  --popover-foreground: #f0f2f8;
+  --primary: #f0f2f8;
+  --primary-foreground: #0c1120;
+  --secondary: #131b30;
+  --secondary-foreground: #f0f2f8;
+  --muted: #131b30;
+  --muted-foreground: #6b7fa3;
+  --accent: #131b30;
+  --accent-foreground: #f0f2f8;
   --destructive: #7f1d1d;
   --destructive-foreground: #f8fafc;
-  
-  --border: #1e293b;
-  --input: #1e293b;
-  --ring: #1e293b;
+  --border: #1a2540;
+  --input: #1a2540;
+  --ring: #1a2540;
 }
 
 @theme inline {
@@ -91,36 +75,166 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
   }
 }
 
-/* Custom Glassmorphism Utility */
+/* Glassmorphism */
 .glass {
-  background: rgba(15, 23, 42, 0.4);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(12, 17, 32, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .dark .glass {
-  background: rgba(2, 8, 23, 0.65);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(5, 7, 14, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-/* Custom Webkit Scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+/* Glow utility */
+.glow-indigo {
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.15), 0 0 60px rgba(99, 102, 241, 0.05);
 }
+
+.glow-pink {
+  box-shadow: 0 0 20px rgba(236, 72, 153, 0.15), 0 0 60px rgba(236, 72, 153, 0.05);
+}
+
+.glow-emerald {
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.15), 0 0 60px rgba(16, 185, 129, 0.05);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
-  background: var(--muted);
+  background: rgba(255, 255, 255, 0.08);
   border-radius: 10px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--muted-foreground);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Smooth animations */
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes glow-pulse {
+
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+
+  50% {
+    opacity: 0.8;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
+/* Hide scrollbar */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ── Mobile optimizations ───────────────────────────────────── */
+
+/* Prevent bounce overscroll on the main body - mobile */
+html,
+body {
+  overscroll-behavior: none;
+  -webkit-overscroll-behavior: none;
+}
+
+/* iOS safe area support for bottom tab bar */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Remove 300ms tap delay on all interactive elements */
+button,
+a,
+[role="button"],
+input,
+textarea,
+select {
+  touch-action: manipulation;
+}
+
+/* Prevent text selection on tap on buttons/nav */
+button,
+nav,
+.no-select {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Better tap highlight for mobile */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Ensure scrollable areas work on iOS */
+.overflow-y-auto,
+.overflow-y-scroll {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Mobile input font-size: prevent zoom on input focus on iOS */
+@media (max-width: 767px) {
+
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
 }

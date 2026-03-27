@@ -5,6 +5,7 @@ import { useSocketStore } from './useSocketStore';
 export const useStrangerStore = create((set, get) => ({
     status: 'idle', // 'idle', 'waiting', 'matched'
     partnerId: null,
+    partnerUsername: null,
     roomId: null,
     messages: [],
     isTyping: false,
@@ -13,7 +14,7 @@ export const useStrangerStore = create((set, get) => ({
         const socket = useSocketStore.getState().socket;
         if (!socket) return;
 
-        set({ status: 'waiting', partnerId: null, roomId: null, messages: [] });
+        set({ status: 'waiting', partnerId: null, partnerUsername: null, roomId: null, messages: [] });
         // Tell server we want to match
         socket.emit('joinStrangerQueue');
 
@@ -28,8 +29,8 @@ export const useStrangerStore = create((set, get) => ({
             set({ status: data.state }); // 'waiting'
         });
 
-        socket.on('strangerMatch', ({ targetUserId, roomId, partnerId }) => {
-            set({ status: 'matched', partnerId: partnerId || targetUserId, roomId });
+        socket.on('strangerMatch', ({ targetUserId, roomId, partnerId, targetUsername }) => {
+            set({ status: 'matched', partnerId: partnerId || targetUserId, partnerUsername: targetUsername, roomId });
             // After matched, client natively joins room on backend
             socket.emit('joinStrangerRoom', roomId);
         });
@@ -40,7 +41,7 @@ export const useStrangerStore = create((set, get) => ({
 
         socket.on('partnerLeft', () => {
             // Partner disconnected or skipped
-            set({ status: 'idle', partnerId: null, roomId: null, messages: [] });
+            set({ status: 'idle', partnerId: null, partnerUsername: null, roomId: null, messages: [] });
         });
     },
 
@@ -54,7 +55,7 @@ export const useStrangerStore = create((set, get) => ({
         }
 
         socket.emit('leaveStrangerQueue');
-        set({ status: 'idle', partnerId: null, roomId: null, messages: [] });
+        set({ status: 'idle', partnerId: null, partnerUsername: null, roomId: null, messages: [] });
     },
 
     nextMatch: () => {
@@ -69,11 +70,11 @@ export const useStrangerStore = create((set, get) => ({
         get().joinQueue();
     },
 
-    sendMessage: async (text) => {
+    sendMessage: async (messageData) => {
         const { roomId } = get();
         if (!roomId) return;
         try {
-            await api.post(`/anonymous/stranger/${roomId}/send`, { text });
+            await api.post(`/anonymous/stranger/${roomId}/send`, messageData);
             // Socket broadcast handles pushing it to `messages` array
         } catch (e) {
             console.error("Failed sending stranger msg", e);

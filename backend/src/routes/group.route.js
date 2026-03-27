@@ -7,6 +7,7 @@ import {
     sendGroupMessage,
     deleteGroup,
     leaveGroup,
+    updateGroupProfilePic
 } from '../controllers/group.controller.js';
 
 const router = express.Router();
@@ -17,5 +18,6 @@ router.get('/:groupId/messages', protectRoute, getGroupMessages);
 router.post('/:groupId/send', protectRoute, sendGroupMessage);
 router.delete('/:groupId', protectRoute, deleteGroup);
 router.post('/:groupId/leave', protectRoute, leaveGroup);
+router.put('/:groupId/profile-pic', protectRoute, updateGroupProfilePic);
 
 export default router;

@@ -17,6 +17,11 @@ model User {
   password  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  
+  storyStreak   Int       @default(0)
+  lastStoryDate DateTime?
+  
+  profilePic    String?   @default("")
 
   messages          Message[]
   groupMemberships  GroupMember[]
@@ -32,13 +37,20 @@ model User {
   receivedRequests  FriendRequest[]      @relation("ReceivedRequests")
   friendships1      Friendship[]         @relation("FriendshipUser1")
   friendships2      Friendship[]         @relation("FriendshipUser2")
+
+  loveSent          LoveConnection[]     @relation("LoveSender")
+  loveReceived      LoveConnection[]     @relation("LoveReceiver")
+  loveMessages      LoveMessage[]
 }
 
 model Message {
   id        String   @id @default(uuid())
-  content   String
+  content   String?
   createdAt DateTime @default(now())
   isRead    Boolean  @default(false)
+
+  mediaUrl   String?
+  mediaType  MediaType?
 
   senderId  String
   sender    User     @relation(fields: [senderId], references: [id])
@@ -51,6 +63,13 @@ model Message {
   roomId     String?  // Polymorphic ID for Stranger/Interest/Practice/Story rooms
 }
 
+enum MediaType {
+  IMAGE
+  VIDEO
+  GIF
+  STICKER
+}
+
 enum RoomType {
   DIRECT
   GROUP
@@ -61,9 +80,10 @@ enum RoomType {
 }
 
 model Group {
-  id        String   @id @default(uuid())
-  name      String
-  createdAt DateTime @default(now())
+  id         String   @id @default(uuid())
+  name       String
+  profilePic String?
+  createdAt  DateTime @default(now())
 
   members   GroupMember[]
   messages  Message[]
@@ -229,4 +249,43 @@ model Friendship {
   createdAt DateTime @default(now())
 
   @@unique([user1Id, user2Id])
+}
+
+enum LoveStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  BREAKING_UP
+}
+
+model LoveConnection {
+  id                  String     @id @default(uuid())
+  senderId            String
+  sender              User       @relation("LoveSender", fields: [senderId], references: [id])
+  receiverId          String
+  receiver            User       @relation("LoveReceiver", fields: [receiverId], references: [id])
+  status              LoveStatus @default(PENDING)
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+
+  breakupInitiatedBy  String?
+  breakupInitiatedAt  DateTime?
+
+  messages            LoveMessage[]
+
+  @@unique([senderId, receiverId])
+}
+
+model LoveMessage {
+  id           String         @id @default(uuid())
+  content      String?
+  mediaUrl     String?
+  mediaType    MediaType?
+  isAI         Boolean        @default(false)
+  createdAt    DateTime       @default(now())
+
+  connectionId String
+  connection   LoveConnection @relation(fields: [connectionId], references: [id])
+  senderId     String
+  sender       User           @relation(fields: [senderId], references: [id])
 }

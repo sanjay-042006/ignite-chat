@@ -115,9 +115,29 @@ export const useStoryStore = create((set, get) => ({
         }
     },
 
+    // Helper: get whose turn it is based on members order and entries count
+    getCurrentTurnUserId: () => {
+        const { activeStory } = get();
+        if (!activeStory || !activeStory.members || activeStory.members.length === 0) return null;
+        const entryCount = activeStory.entries?.length || 0;
+        const turnIndex = entryCount % activeStory.members.length;
+        return activeStory.members[turnIndex].user.id;
+    },
+
+    getCurrentTurnUsername: () => {
+        const { activeStory } = get();
+        if (!activeStory || !activeStory.members || activeStory.members.length === 0) return null;
+        const entryCount = activeStory.entries?.length || 0;
+        const turnIndex = entryCount % activeStory.members.length;
+        return activeStory.members[turnIndex].user.username;
+    },
+
     subscribeToStoryUpdates: () => {
         const socket = useSocketStore.getState().socket;
         if (!socket) return;
+
+        // Clear any existing listeners to prevent duplicates if called multiple times
+        get().unsubscribeFromStoryUpdates();
 
         socket.on('newStoryEntry', (entry) => {
             set((state) => {
@@ -134,14 +154,20 @@ export const useStoryStore = create((set, get) => ({
         socket.on('story_completed', ({ groupId }) => {
             const { activeStory } = get();
             if (activeStory && activeStory.id === groupId) {
-                set({ status: 'idle', activeStory: null }); // Boot out of active view, it's evaluated now
-                toast.success("Your story has reached 30 days! AI is evaluating it now.", { duration: 5000 });
+                set({ status: 'idle', activeStory: null });
+                toast.success("Story time is up! AI is formatting and completing your story now.", { duration: 5000 });
             }
         });
 
         socket.on('story_group_winner_announced', (result) => {
-            toast.success(`Story evaluation complete! Winner: ${result.winnerUser.username}`, { duration: 6000, icon: '🏆' });
-            get().fetchLibrary(); // Refresh library
+            toast.success(`Story completed! Best contributor: ${result.winnerUser?.username || 'Unknown'}`, { duration: 6000, icon: '🏆' });
+            get().fetchLibrary(); // Refresh library to show in completed list
+            
+            // Auto reload the specific story if the user is actively viewing it
+            const { focusedStory } = get();
+            if (focusedStory && focusedStory.id === result.groupId) {
+                get().fetchStoryDetails(result.groupId);
+            }
         });
     },
 

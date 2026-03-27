@@ -91,17 +91,19 @@ export const getAnonymousStatus = async (req, res) => {
 
 export const sendStrangerMessage = async (req, res) => {
     try {
-        const { text } = req.body;
+        const { text, mediaUrl, mediaType } = req.body;
         const { roomId } = req.params;
         const senderId = req.user.id;
 
-        if (!text) return res.status(400).json({ error: 'Text required' });
+        if (!text && !mediaUrl) return res.status(400).json({ error: 'Message content or media required' });
 
         const newMessage = await prisma.message.create({
             data: {
                 senderId,
                 roomId,
-                content: text,
+                content: text || null,
+                mediaUrl: mediaUrl || null,
+                mediaType: mediaType || null,
                 roomType: 'STRANGER'
             }
         });

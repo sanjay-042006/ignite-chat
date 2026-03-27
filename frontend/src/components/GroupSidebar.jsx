@@ -1,7 +1,7 @@
 import { useGroupStore } from '../context/useGroupStore';
 import { useAuthStore } from '../context/useAuthStore';
 import { useChatStore } from '../context/useChatStore';
-import { Users2, Search, Plus, X, Trash2 } from 'lucide-react';
+import { Users, Search, Plus, X, Trash2 } from 'lucide-react';
 import clsx from 'clsx';
 import { useState, useEffect } from 'react';
 
@@ -15,68 +15,63 @@ const GroupSidebar = () => {
     const [newGroupName, setNewGroupName] = useState('');
     const [selectedMembers, setSelectedMembers] = useState([]);
 
-    useEffect(() => {
-        getGroups();
-    }, [getGroups]);
+    useEffect(() => { getGroups(); }, [getGroups]);
 
     const filteredGroups = groups.filter((g) => g.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
     const handleCreateGroup = async (e) => {
         e.preventDefault();
         if (!newGroupName.trim() || selectedMembers.length === 0) return;
-
         const success = await createGroup(newGroupName, selectedMembers);
-        if (success) {
-            setIsCreating(false);
-            setNewGroupName('');
-            setSelectedMembers([]);
-        }
+        if (success) { setIsCreating(false); setNewGroupName(''); setSelectedMembers([]); }
     };
 
     const toggleMember = (userId) => {
-        if (selectedMembers.includes(userId)) {
-            setSelectedMembers(selectedMembers.filter(id => id !== userId));
-        } else {
-            setSelectedMembers([...selectedMembers, userId]);
-        }
+        setSelectedMembers(prev => prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]);
     };
 
     if (isGroupsLoading) return (
-        <div className="w-72 lg:w-80 border-r border-border h-full flex flex-col glass">
-            <div className="p-4 flex items-center gap-3 animate-pulse">
-                <div className="size-10 rounded-full bg-border" />
-                <div className="h-4 w-24 bg-border rounded" />
+        <div className="w-72 lg:w-80 border-r border-white/5 h-full flex flex-col">
+            <div className="p-3 space-y-3">
+                {[1, 2, 3].map(i => (
+                    <div key={i} className="flex items-center gap-3 animate-pulse">
+                        <div className="size-9 rounded-xl bg-white/5" />
+                        <div className="flex-1 space-y-1.5"><div className="h-3 w-20 bg-white/5 rounded" /><div className="h-2 w-14 bg-white/[0.03] rounded" /></div>
+                    </div>
+                ))}
             </div>
         </div>
-    )
+    );
 
     return (
-        <div className="w-full md:w-72 lg:w-96 flex flex-col h-full glass transition-all duration-200 hide-scrollbar overflow-hidden">
-            <div className="p-4 border-b border-white/5 space-y-4">
-                <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-bold flex items-center gap-2">
-                        <Users2 className="size-5 text-purple-400" />
-                        Groups
+        <div className="w-full md:w-72 lg:w-80 flex flex-col h-full border-r border-white/5 overflow-hidden"
+            style={{ background: 'linear-gradient(180deg, rgba(139,92,246,0.03) 0%, transparent 40%)' }}>
+
+            <div className="p-3 pb-2 border-b border-white/5">
+                <div className="flex items-center justify-between mb-2.5">
+                    <h2 className="text-base font-bold flex items-center gap-1.5">
+                        <div className="size-6 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-sm shadow-violet-500/30">
+                            <Users className="size-3.5 text-white" />
+                        </div>
+                        <span className="bg-gradient-to-r from-violet-400 to-purple-400 bg-clip-text text-transparent">Groups</span>
                     </h2>
                     <button
-                        onClick={() => {
-                            setIsCreating(!isCreating);
-                            if (!users.length) getUsers();
-                        }}
-                        className="p-2 hover:bg-white/10 rounded-full transition"
+                        onClick={() => { setIsCreating(!isCreating); if (!users.length) getUsers(); }}
+                        className={clsx("size-7 rounded-lg flex items-center justify-center transition",
+                            isCreating ? "bg-red-500/15 text-red-400" : "bg-violet-500/15 text-violet-400 hover:bg-violet-500/25"
+                        )}
                     >
-                        {isCreating ? <X className="size-5 text-muted-foreground" /> : <Plus className="size-5 text-indigo-400" />}
+                        {isCreating ? <X className="size-3.5" /> : <Plus className="size-3.5" />}
                     </button>
                 </div>
 
-                {/* Search Input */}
                 {!isCreating && (
-                    <div className="relative w-full">
-                        <Search className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
+                    <div className="relative">
+                        <Search className="absolute left-2.5 top-2 size-3.5 text-muted-foreground" />
                         <input
                             type="text"
                             placeholder="Search groups..."
-                            className="w-full bg-input/20 border-white/10 rounded-full py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
+                            className="w-full bg-white/5 border border-white/5 rounded-lg py-1.5 pl-8 pr-3 text-xs focus:outline-none focus:ring-1 focus:ring-violet-500/50 focus:border-violet-500/30 transition placeholder:text-muted-foreground/50"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
@@ -84,91 +79,75 @@ const GroupSidebar = () => {
                 )}
             </div>
 
-            <div className="flex-1 overflow-y-auto space-y-1 p-3">
+            <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
                 {isCreating ? (
-                    <form onSubmit={handleCreateGroup} className="space-y-4 animate-in fade-in slide-in-from-top-4">
+                    <form onSubmit={handleCreateGroup} className="space-y-3 p-1 animate-slide-up">
                         <div>
-                            <label className="text-xs font-semibold text-muted-foreground ml-1">Group Name</label>
+                            <label className="text-[10px] font-bold uppercase text-muted-foreground/60 tracking-wider ml-0.5">Group Name</label>
                             <input
                                 type="text"
                                 placeholder="E.g., Weekend Plans"
-                                className="w-full mt-1 bg-input/20 border border-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-all"
+                                className="w-full mt-1 bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-violet-500/50 transition"
                                 value={newGroupName}
                                 onChange={(e) => setNewGroupName(e.target.value)}
                                 autoFocus
                             />
                         </div>
-
                         <div>
-                            <label className="text-xs font-semibold text-muted-foreground ml-1">Select Members</label>
-                            <div className="mt-2 space-y-1 max-h-48 overflow-y-auto border border-white/5 rounded-xl p-1 bg-background/50">
+                            <label className="text-[10px] font-bold uppercase text-muted-foreground/60 tracking-wider ml-0.5">Members</label>
+                            <div className="mt-1 space-y-0.5 max-h-44 overflow-y-auto border border-white/5 rounded-xl p-1 bg-black/10">
                                 {users.filter(u => u.id !== authUser.id && u.friendshipStatus === 'FRIEND').map(user => (
-                                    <div
-                                        key={user.id}
-                                        onClick={() => toggleMember(user.id)}
+                                    <div key={user.id} onClick={() => toggleMember(user.id)}
                                         className={clsx(
-                                            "flex items-center gap-3 p-2 rounded-lg cursor-pointer transition",
-                                            selectedMembers.includes(user.id) ? "bg-indigo-500/20 shadow-sm border border-indigo-500/30" : "hover:bg-white/5 border border-transparent"
+                                            "flex items-center gap-2.5 p-2 rounded-lg cursor-pointer transition text-xs",
+                                            selectedMembers.includes(user.id) ? "bg-violet-500/15 border border-violet-500/20" : "hover:bg-white/[0.04] border border-transparent"
+                                        )}>
+                                        {user.profilePic ? (
+                                            <img src={user.profilePic} alt={user.username} className="size-7 rounded-full object-cover border border-white/10 shrink-0" />
+                                        ) : (
+                                            <div className="size-7 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white font-bold text-[10px] shrink-0">
+                                                {user.username.charAt(0).toUpperCase()}
+                                            </div>
                                         )}
-                                    >
-                                        <div className="size-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs object-cover flex-shrink-0">
-                                            {user.username.charAt(0).toUpperCase()}
-                                        </div>
-                                        <span className="font-medium text-sm">{user.username}</span>
-                                        {selectedMembers.includes(user.id) && <div className="ml-auto size-2 bg-indigo-500 rounded-full" />}
+                                        <span className="font-medium">{user.username}</span>
+                                        {selectedMembers.includes(user.id) && <div className="ml-auto size-2 bg-violet-400 rounded-full" />}
                                     </div>
                                 ))}
                             </div>
                         </div>
-
-                        <button
-                            type="submit"
-                            disabled={!newGroupName.trim() || selectedMembers.length === 0}
-                            className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white py-2 rounded-xl text-sm font-medium transition"
-                        >
+                        <button type="submit" disabled={!newGroupName.trim() || selectedMembers.length === 0}
+                            className="w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 disabled:opacity-30 text-white py-2 rounded-xl text-xs font-bold shadow-md shadow-violet-500/20 transition-all">
                             Create Group
                         </button>
                     </form>
                 ) : (
                     <>
-                        {filteredGroups.length === 0 && (
-                            <div className="text-center text-muted-foreground mt-8 text-sm">No groups found.</div>
-                        )}
-
+                        {filteredGroups.length === 0 && <div className="text-center text-muted-foreground mt-10 text-xs">No groups found</div>}
                         {filteredGroups.map((group) => {
                             const amAdmin = group.members?.some(m => m.userId === authUser.id && m.isAdmin);
                             return (
-                                <div
-                                    key={group.id}
-                                    onClick={() => setSelectedGroup(group)}
+                                <div key={group.id} onClick={() => setSelectedGroup(group)}
                                     className={clsx(
-                                        "w-full flex items-center gap-4 p-3 rounded-xl transition-all duration-200 text-left relative cursor-pointer group/item",
-                                        selectedGroup?.id === group.id ? "bg-purple-500/20 shadow-sm border border-purple-500/30" : "hover:bg-white/5 border border-transparent"
-                                    )}
-                                >
-                                    <div className="size-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg shadow-md border-[1.5px] border-white/10 flex-shrink-0">
-                                        <Users2 className="size-6 text-white/80" />
-                                    </div>
-
-                                    <div className="min-w-0 hidden md:block flex-1">
-                                        <div className="flex items-center justify-between w-full">
-                                            <p className="font-semibold text-sm truncate">{group.name}</p>
+                                        "w-full flex items-center gap-3 p-2.5 rounded-xl transition-all duration-200 text-left cursor-pointer group/item",
+                                        selectedGroup?.id === group.id
+                                            ? "bg-gradient-to-r from-violet-500/10 to-purple-500/[0.06] border border-violet-500/20 shadow-sm"
+                                            : "hover:bg-white/[0.04] border border-transparent"
+                                    )}>
+                                    {group.profilePic ? (
+                                        <img src={group.profilePic} alt={group.name} className="size-9 rounded-xl object-cover shadow-sm ring-2 ring-violet-500/10 shrink-0" />
+                                    ) : (
+                                        <div className="size-9 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white shadow-sm ring-2 ring-violet-500/10 shrink-0">
+                                            <Users className="size-4 text-white/80" />
                                         </div>
-                                        <p className="text-xs text-muted-foreground truncate">
-                                            {group.members?.length || 0} members
-                                        </p>
+                                    )}
+                                    <div className="min-w-0 flex-1">
+                                        <p className="font-semibold text-xs truncate">{group.name}</p>
+                                        <p className="text-[10px] text-muted-foreground/50 font-medium">{group.members?.length || 0} members</p>
                                     </div>
-
                                     {amAdmin && (
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                if (confirm(`Delete group "${group.name}"?`)) deleteGroup(group.id);
-                                            }}
-                                            className="hidden group-hover/item:flex p-1.5 rounded-lg hover:bg-red-500/20 text-muted-foreground hover:text-red-400 transition shrink-0"
-                                            title="Delete group"
-                                        >
-                                            <Trash2 className="size-4" />
+                                        <button onClick={(e) => { e.stopPropagation(); if (confirm(`Delete "${group.name}"?`)) deleteGroup(group.id); }}
+                                            className="hidden group-hover/item:flex size-7 rounded-lg hover:bg-red-500/15 text-muted-foreground/30 hover:text-red-400 items-center justify-center transition shrink-0">
+                                            <Trash2 className="size-3.5" />
                                         </button>
                                     )}
                                 </div>

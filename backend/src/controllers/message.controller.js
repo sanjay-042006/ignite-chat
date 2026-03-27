@@ -15,6 +15,8 @@ export const getUsersForSidebar = async (req, res) => {
                 id: true,
                 username: true,
                 email: true,
+                storyStreak: true,
+                profilePic: true,
             },
         });
 
@@ -27,6 +29,17 @@ export const getUsersForSidebar = async (req, res) => {
                 OR: [{ senderId: loggedInUserId }, { receiverId: loggedInUserId }],
                 status: 'PENDING'
             }
+        });
+
+        const activeLoves = await prisma.loveConnection.findMany({
+            where: { status: 'ACCEPTED' }
+        });
+        const activeLovesMap = new Map();
+        activeLoves.forEach(love => {
+            const diffDays = Math.ceil(Math.abs(new Date() - new Date(love.createdAt)) / (1000 * 60 * 60 * 24));
+            const streak = Math.floor(diffDays / 30.44) + 1;
+            activeLovesMap.set(love.senderId, streak);
+            activeLovesMap.set(love.receiverId, streak);
         });
 
         const friendIds = new Set(friendships.map(f => f.user1Id === loggedInUserId ? f.user2Id : f.user1Id));
@@ -45,7 +58,12 @@ export const getUsersForSidebar = async (req, res) => {
                 if (reqObj) requestId = reqObj.id;
             }
 
-            return { ...user, friendshipStatus: status, requestId };
+            return { 
+                ...user, 
+                friendshipStatus: status, 
+                requestId,
+                loveStreak: activeLovesMap.get(user.id) || 0
+            };
         });
 
         res.status(200).json(usersWithStatus);
@@ -81,12 +99,12 @@ export const getMessages = async (req, res) => {
 
 export const sendMessage = async (req, res) => {
     try {
-        const { text } = req.body;
+        const { text, mediaUrl, mediaType } = req.body;
         const { id: receiverId } = req.params;
         const senderId = req.user.id;
 
-        if (!text) {
-            return res.status(400).json({ error: 'Text content is required' });
+        if (!text && !mediaUrl) {
+            return res.status(400).json({ error: 'Message content or media is required' });
         }
 
         // Validate Friendship
@@ -107,7 +125,9 @@ export const sendMessage = async (req, res) => {
             data: {
                 senderId,
                 receiverId,
-                content: text,
+                content: text || null,
+                mediaUrl: mediaUrl || null,
+                mediaType: mediaType || null,
                 roomType: 'DIRECT',
             },
         });

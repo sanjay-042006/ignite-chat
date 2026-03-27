@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: ignitechat
+    env: node
+    region: oregon 
+    # The root of the application for deploying backend + frontend together
+    rootDir: backend
+    buildCommand: "cd ../frontend && npm install && npm run build && cd ../backend && npm install"
+    startCommand: "npm start"
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        # You will need to put your actual database URL here or in the Render dashboard
+        sync: false
+      - key: JWT_SECRET
+        # Generate a random secret and put it in Render's dashboard
+        sync: false

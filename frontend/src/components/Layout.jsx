@@ -4,13 +4,16 @@ import Sidebar from './Sidebar';
 const Layout = () => {
     return (
         <div className="flex h-screen bg-background text-foreground overflow-hidden">
-            {/* Sidebar Navigation */}
-            <Sidebar className="w-20 lg:w-64 border-r border-border/50 hidden md:flex shrink-0 z-20" />
+            {/* Desktop Sidebar */}
+            <Sidebar className="w-16 lg:w-60 border-r border-white/5 hidden md:flex shrink-0 z-20" />
 
-            {/* Main Content Area */}
-            <main className="flex-1 flex flex-col min-w-0 bg-background/50 h-full relative">
+            {/* Main Content */}
+            <main className="flex-1 flex flex-col min-w-0 h-full relative overflow-hidden">
                 <Outlet />
             </main>
+
+            {/* Mobile Bottom Tab Bar */}
+            <Sidebar className="fixed bottom-0 left-0 right-0 h-16 flex md:hidden z-50 border-t border-white/5" isMobile />
         </div>
     );
 };

@@ -1,81 +1,74 @@
 import { useEffect, useRef, useState } from 'react';
 import { useInterestStore } from '../context/useInterestStore';
 import { useAuthStore } from '../context/useAuthStore';
-import { Ghost, Loader2, Send, LogOut, Code, Briefcase, Gamepad2, Heart, Music, Plane } from 'lucide-react';
+import { Ghost, Loader2, Send, LogOut, Code, Briefcase, Gamepad2, Heart, Music, Plane, UserPlus } from 'lucide-react';
 import clsx from 'clsx';
+import { useChatStore } from '../context/useChatStore';
+import toast from 'react-hot-toast';
+import MessageInput from '../components/chat/MessageInput';
+import { MediaAttachment } from '../components/chat/MediaAttachment';
 
 const TOPICS = [
-    { id: 'Coding', icon: Code, color: 'text-blue-400', bg: 'bg-blue-500/10' },
-    { id: 'Business', icon: Briefcase, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
-    { id: 'Gaming', icon: Gamepad2, color: 'text-purple-400', bg: 'bg-purple-500/10' },
-    { id: 'Dating', icon: Heart, color: 'text-rose-400', bg: 'bg-rose-500/10' },
-    { id: 'Music', icon: Music, color: 'text-pink-400', bg: 'bg-pink-500/10' },
-    { id: 'Travel', icon: Plane, color: 'text-cyan-400', bg: 'bg-cyan-500/10' },
+    { id: 'Coding', icon: Code, color: 'from-blue-500 to-cyan-500' },
+    { id: 'Business', icon: Briefcase, color: 'from-emerald-500 to-teal-500' },
+    { id: 'Gaming', icon: Gamepad2, color: 'from-violet-500 to-purple-500' },
+    { id: 'Dating', icon: Heart, color: 'from-pink-500 to-rose-500' },
+    { id: 'Music', icon: Music, color: 'from-fuchsia-500 to-pink-500' },
+    { id: 'Travel', icon: Plane, color: 'from-sky-500 to-blue-500' },
 ];
 
 const InterestPage = () => {
     const { activeRoom, messages, isJoining, joinInterestRoom, leaveRoom, getMessages, subscribeToMessages, unsubscribeFromMessages, sendMessage, nextMatch } = useInterestStore();
     const { authUser } = useAuthStore();
+    const { sendFriendRequest } = useChatStore();
     const [text, setText] = useState('');
     const messageEndRef = useRef(null);
 
-    // Auto scroll
     useEffect(() => {
-        if (messageEndRef.current && messages) {
-            messageEndRef.current.scrollIntoView({ behavior: 'smooth' });
-        }
+        if (messageEndRef.current && messages) messageEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
-    // Handle active room mount/unmount subscriptions
     useEffect(() => {
-        if (activeRoom) {
-            getMessages(activeRoom.roomId);
-            subscribeToMessages();
-        }
+        if (activeRoom) { getMessages(activeRoom.roomId); subscribeToMessages(); }
         return () => unsubscribeFromMessages();
     }, [activeRoom?.roomId, getMessages, subscribeToMessages, unsubscribeFromMessages]);
 
     const handleSendMessage = async (e) => {
         e.preventDefault();
         if (!text.trim() || !activeRoom) return;
-
         await sendMessage(text.trim());
         setText('');
     };
 
-    // Renders
-
+    // TOPIC SELECTION
     if (!activeRoom) {
         return (
-            <div className="w-full h-full flex flex-col p-6 lg:p-12 bg-background/50 relative overflow-y-auto">
-                <div className="absolute inset-0 bg-gradient-to-tr from-cyan-500/10 via-blue-500/5 to-transparent backdrop-blur-3xl -z-10 blur-[100px]" />
+            <div className="w-full h-full flex flex-col p-4 lg:p-10 relative overflow-y-auto pb-20 md:pb-8">
+                <div className="absolute top-1/4 left-1/3 w-72 h-72 bg-emerald-500/[0.04] rounded-full blur-[100px] animate-glow-pulse" />
+                <div className="absolute bottom-1/3 right-1/4 w-80 h-80 bg-teal-500/[0.03] rounded-full blur-[100px] animate-glow-pulse" style={{ animationDelay: '1s' }} />
 
-                <div className="max-w-4xl mx-auto w-full space-y-10 animate-in fade-in zoom-in duration-500 mt-10">
-                    <div className="text-center space-y-4">
-                        <div className="flex justify-center mb-6">
-                            <div className="w-20 h-20 rounded-2xl bg-cyan-500/10 flex items-center justify-center shadow-xl shadow-cyan-500/20 border border-cyan-500/20 glass">
-                                <Ghost className="w-10 h-10 text-cyan-400" />
+                <div className="max-w-3xl mx-auto w-full space-y-8 animate-slide-up relative z-10 mt-6">
+                    <div className="text-center space-y-3">
+                        <div className="flex justify-center">
+                            <div className="size-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-xl shadow-emerald-500/20 animate-float">
+                                <Ghost className="size-7 text-white" />
                             </div>
                         </div>
-                        <h2 className="text-4xl font-extrabold tracking-tight">Interest Rooms</h2>
-                        <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-                            Join temporary, topic-based anonymous groups. Identities are hidden. Rooms expire after 1 hour of inactivity.
-                        </p>
+                        <div>
+                            <h2 className="text-3xl md:text-2xl font-extrabold tracking-tight bg-gradient-to-r from-emerald-300 to-teal-300 bg-clip-text text-transparent">Interest Rooms</h2>
+                            <p className="text-base md:text-sm text-muted-foreground mt-2">Join topic-based rooms and chat anonymously with people who share your interests.</p>
+                        </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
                         {TOPICS.map((topic) => (
-                            <button
-                                key={topic.id}
-                                disabled={isJoining}
-                                onClick={() => joinInterestRoom(topic.id)}
-                                className="group flex flex-col items-center justify-center p-8 rounded-3xl glass hover:bg-white/5 border border-white/5 hover:border-white/20 transition-all hover:scale-[1.02]"
-                            >
-                                <div className={clsx("w-16 h-16 rounded-full flex items-center justify-center mb-4 transition-transform group-hover:scale-110", topic.bg)}>
-                                    <topic.icon className={clsx("w-8 h-8", topic.color)} />
+                            <button key={topic.id} disabled={isJoining} onClick={() => joinInterestRoom(topic.id)}
+                                className="group flex flex-col items-center justify-center p-5 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-white/10 hover:bg-white/[0.04] transition-all hover:scale-[1.03] active:scale-[0.98] disabled:opacity-50">
+                                <div className={`size-12 rounded-xl bg-gradient-to-br ${topic.color} flex items-center justify-center mb-3 shadow-md group-hover:scale-110 transition-transform`}>
+                                    <topic.icon className="size-6 text-white" />
                                 </div>
-                                <h3 className="text-xl font-bold">{topic.id}</h3>
-                                <p className="text-sm text-muted-foreground mt-2">Join global chat</p>
+                                <h3 className="text-sm font-bold">{topic.id}</h3>
+                                <p className="text-[10px] text-muted-foreground/50 mt-0.5">Join room</p>
                             </button>
                         ))}
                     </div>
@@ -84,69 +77,64 @@ const InterestPage = () => {
         );
     }
 
-    // ACTIVE ROOM VIEW
+    // ACTIVE ROOM
     return (
-        <div className="flex flex-col h-full bg-background/50 relative w-full border-l border-border/50">
-            {/* Top Header */}
-            <div className="px-6 py-4 glass border-b border-white/5 flex items-center justify-between sticky top-0 z-10 shadow-sm">
-                <div className="flex items-center gap-4">
-                    <div className="size-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white font-bold shadow-md border-2 border-background">
-                        <Ghost className="size-5" />
+        <div className="flex flex-col h-full relative pb-16 md:pb-0" style={{ background: 'linear-gradient(180deg, rgba(16,185,129,0.02), transparent 30%)' }}>
+            <div className="px-4 py-2.5 border-b border-white/5 flex items-center justify-between sticky top-0 z-10 backdrop-blur-xl" style={{ background: 'rgba(0,0,0,0.2)' }}>
+                <div className="flex items-center gap-3">
+                    <div className="size-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white shadow-md shadow-emerald-500/20 ring-2 ring-emerald-500/10">
+                        <Ghost className="size-4" />
                     </div>
                     <div>
-                        <h3 className="font-semibold text-lg">{activeRoom.topic} Room</h3>
-                        <p className="text-xs text-cyan-400 animate-pulse">Anonymous Area</p>
+                        <h3 className="font-semibold text-sm">{activeRoom.topic} Room</h3>
+                        <p className="text-[10px] text-emerald-400/60 font-medium">Anonymous</p>
                     </div>
                 </div>
-
-                <div className="flex items-center gap-2">
-                    <button
-                        onClick={nextMatch}
-                        disabled={isJoining}
-                        className="bg-cyan-500/10 text-cyan-500 hover:bg-cyan-500/20 text-sm font-medium py-2 px-4 rounded-xl flex items-center gap-2 transition disabled:opacity-50"
-                    >
-                        {isJoining ? <Loader2 className="size-4 animate-spin" /> : <Ghost className="size-4" />} Next Group
+                <div className="flex items-center gap-1.5">
+                    <button onClick={nextMatch} disabled={isJoining}
+                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-emerald-600/80 to-teal-600/80 text-white text-[10px] font-bold shadow-sm transition-all hover:scale-105 active:scale-95 disabled:opacity-50">
+                        {isJoining ? <Loader2 className="size-3 animate-spin" /> : <Ghost className="size-3" />} Next
                     </button>
-                    <button
-                        onClick={leaveRoom}
-                        className="bg-destructive/10 text-destructive hover:bg-destructive/20 text-sm font-medium py-2 px-4 rounded-xl flex items-center gap-2 transition"
-                    >
-                        <LogOut className="size-4" /> Leave
+                    <button onClick={leaveRoom}
+                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-red-500/10 text-red-400 text-[10px] font-bold hover:bg-red-500/20 transition">
+                        <LogOut className="size-3" /> Leave
                     </button>
                 </div>
             </div>
 
-            {/* Chat History Area */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                <div className="text-center my-4">
-                    <span className="bg-cyan-500/10 text-cyan-500 text-xs font-medium py-1.5 px-4 rounded-full border border-cyan-500/20">
-                        You are now in the {activeRoom.topic} room. Everyone is anonymous.
+            <div className="flex-1 overflow-y-auto p-3 space-y-3">
+                <div className="text-center my-2">
+                    <span className="bg-emerald-500/5 text-emerald-400/60 text-[10px] font-medium py-1 px-3 rounded-full border border-emerald-500/10">
+                        Anonymous {activeRoom.topic} room 🎭
                     </span>
                 </div>
 
                 {messages.map((message) => {
                     const isMine = message.senderId === authUser.id;
-
-                    // We hide actual names in Interest mode unless we implemented Alias generation
-                    const displayName = isMine ? 'You' : `Anonym_${message.senderId.substring(0, 4)}`;
-
+                    const displayName = isMine ? 'You' : (message.sender?.username || 'Unknown');
                     return (
-                        <div key={message.id} className={clsx("flex w-full", isMine ? "justify-end" : "justify-start")}>
+                        <div key={message.id} className={clsx("flex w-full gap-2", isMine ? "justify-end" : "justify-start")}>
                             {!isMine && (
-                                <div className="size-8 rounded-full bg-zinc-700 flex items-center justify-center text-white text-xs font-bold mr-2 mt-auto" title={displayName}>
-                                    <Ghost className="size-4 opacity-50" />
+                                <div className="size-6 rounded-full bg-zinc-700 flex items-center justify-center text-white mt-auto shrink-0 font-bold text-[8px]">
+                                    {displayName.substring(0, 2).toUpperCase()}
                                 </div>
                             )}
-                            <div className={clsx(
-                                "max-w-[70%] rounded-2xl p-4 shadow-sm backdrop-blur-sm",
-                                isMine ? "bg-cyan-600 font-medium text-white border border-cyan-500/50 rounded-br-none"
-                                    : "bg-card text-card-foreground border border-border/50 rounded-bl-none"
+                            <div className={clsx("max-w-[75%] rounded-2xl px-3.5 py-2.5 shadow-sm",
+                                isMine ? "bg-gradient-to-br from-emerald-600/90 to-teal-600/90 text-white rounded-br-sm"
+                                    : "bg-white/5 border border-white/5 text-card-foreground rounded-bl-sm"
                             )}>
                                 {!isMine && (
-                                    <p className="text-xs font-bold text-cyan-400 mb-1">{displayName}</p>
+                                    <button onClick={() => {
+                                        sendFriendRequest(message.senderId);
+                                        toast.success(`Friend request sent to ${displayName}!`);
+                                    }} className="flex items-center gap-1 text-[10px] font-semibold text-emerald-400/80 hover:text-emerald-300 transition mb-0.5 group" title="Add Friend">
+                                        {displayName}
+                                        <UserPlus className="size-2.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    </button>
                                 )}
-                                <p className="text-[15px] leading-relaxed break-words">{message.content}</p>
-                                <p className={clsx("text-[10px] mt-2 text-right opacity-70", isMine ? "text-cyan-200" : "text-muted-foreground")}>
+                                <MediaAttachment message={message} />
+                                {message.content && <p className="text-[13px] leading-relaxed break-words">{message.content}</p>}
+                                <p className={clsx("text-[9px] mt-1 text-right", isMine ? "text-white/40" : "text-muted-foreground/40")}>
                                     {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </p>
                             </div>
@@ -156,25 +144,8 @@ const InterestPage = () => {
                 <div ref={messageEndRef} />
             </div>
 
-            {/* Input Area */}
-            <div className="p-4 bg-background border-t border-border/50 backdrop-blur-lg">
-                <form onSubmit={handleSendMessage} className="flex gap-2">
-                    <input
-                        type="text"
-                        placeholder={`Message ${activeRoom.topic} anonymously...`}
-                        className="flex-1 bg-input/20 border border-border rounded-xl px-4 py-3 focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-all"
-                        value={text}
-                        onChange={(e) => setText(e.target.value)}
-                        autoFocus
-                    />
-                    <button
-                        type="submit"
-                        disabled={!text.trim()}
-                        className="bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl px-4 flex items-center justify-center transition"
-                    >
-                        <Send className="size-5" />
-                    </button>
-                </form>
+            <div className="p-3 border-t border-white/5 backdrop-blur-xl" style={{ background: 'rgba(0,0,0,0.15)' }}>
+                <MessageInput onSendMessage={sendMessage} placeholder={`Message ${activeRoom.topic} anonymously...`} />
             </div>
         </div>
     );

@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+    baseURL: import.meta.env.VITE_API_URL || '/api',
     withCredentials: true,
 });
 
@@ -52,6 +52,20 @@ export const useAuthStore = create((set, get) => ({
             return { success: false, message: msg };
         } finally {
             set({ isLoggingIn: false });
+        }
+    },
+
+    updateProfile: async (data) => {
+        set({ isUpdatingProfile: true });
+        try {
+            const res = await api.put('/auth/update-profile', data);
+            set({ authUser: res.data });
+            return { success: true };
+        } catch (error) {
+            console.error('Error updating profile:', error);
+            return { success: false, message: 'Failed to update profile' };
+        } finally {
+            set({ isUpdatingProfile: false });
         }
     },
 

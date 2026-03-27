@@ -21,6 +21,9 @@ export const useGroupStore = create((set, get) => ({
         }
     },
 
+    setSelectedGroup: (group) => set({ selectedGroup: group }),
+
+
     createGroup: async (name, memberIds) => {
         try {
             const res = await api.post('/groups', { name, memberIds });
@@ -50,9 +53,9 @@ export const useGroupStore = create((set, get) => ({
         }
     },
 
-    sendGroupMessage: async (groupId, text) => {
+    sendGroupMessage: async (groupId, messageData) => {
         try {
-            const res = await api.post(`/groups/${groupId}/send`, { text });
+            const res = await api.post(`/groups/${groupId}/send`, messageData);
             // We don't append manually, socket listener will append it if connected properly
             // If we want immediate feedback, we can optimistically append
         } catch (error) {
@@ -88,6 +91,13 @@ export const useGroupStore = create((set, get) => ({
             // Here we could handle UI state changes explicitly or let the chat container handle it
             console.log("Anonymous Mode Toggle Event:", data);
         });
+
+        socket.on('groupProfileUpdated', ({ groupId, profilePic }) => {
+            set((state) => ({
+                groups: state.groups.map(g => g.id === groupId ? { ...g, profilePic } : g),
+                selectedGroup: state.selectedGroup?.id === groupId ? { ...state.selectedGroup, profilePic } : state.selectedGroup
+            }));
+        });
     },
 
     unsubscribeFromGroupMessages: () => {
@@ -95,6 +105,7 @@ export const useGroupStore = create((set, get) => ({
         if (socket) {
             socket.off('newGroupMessage');
             socket.off('anonymousModeToggled');
+            socket.off('groupProfileUpdated');
         }
     },
 
@@ -120,6 +131,20 @@ export const useGroupStore = create((set, get) => ({
                 groups: state.groups.filter(g => g.id !== groupId),
                 selectedGroup: state.selectedGroup?.id === groupId ? null : state.selectedGroup,
                 groupMessages: state.selectedGroup?.id === groupId ? [] : state.groupMessages,
+            }));
+            return true;
+        } catch (error) {
+            console.error(error);
+            return false;
+        }
+    },
+
+    updateGroupProfilePic: async (groupId, profilePic) => {
+        try {
+            const res = await api.put(`/groups/${groupId}/profile-pic`, { profilePic });
+            set((state) => ({
+                groups: state.groups.map(g => g.id === groupId ? { ...g, profilePic: res.data.profilePic } : g),
+                selectedGroup: state.selectedGroup?.id === groupId ? { ...state.selectedGroup, profilePic: res.data.profilePic } : state.selectedGroup
             }));
             return true;
         } catch (error) {

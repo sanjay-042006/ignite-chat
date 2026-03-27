@@ -22,12 +22,12 @@ export const handlePracticeSockets = (socket, io) => {
                 socket.join(roomId);
 
                 // Notify user2 (current socket)
-                io.to(socket.id).emit('practiceMatch', { roomId, partnerId: matchedUser.id });
+                io.to(socket.id).emit('practiceMatch', { roomId, partnerId: matchedUser.id, partnerUsername: matchedUser.username });
 
                 // Notify user1 (matched socket)
                 const user1SocketIds = getReceiverSocketId(matchedUser.id);
                 user1SocketIds.forEach(socketId => {
-                    io.to(socketId).emit('practiceMatchDirect', { targetUserId: matchedUser.id, roomId, partnerId: user.id });
+                    io.to(socketId).emit('practiceMatchDirect', { targetUserId: matchedUser.id, roomId, partnerId: user.id, partnerUsername: user.username });
                 });
 
             } else {

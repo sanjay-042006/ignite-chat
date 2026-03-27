@@ -1,60 +1,195 @@
 import { NavLink } from 'react-router-dom';
 import { useAuthStore } from '../context/useAuthStore';
-import { LogOut, MessageSquare, Ghost, Users, Compass, BookOpen, Edit } from 'lucide-react';
+import { LogOut, MessageSquare, Ghost, Users, Compass, BookOpen, Edit, Heart, Flame, Camera } from 'lucide-react';
+import clsx from 'clsx';
 
-const Sidebar = ({ className = '' }) => {
+const links = [
+    { to: '/', icon: MessageSquare, label: 'Chat', color: 'from-blue-500 to-cyan-500' },
+    { to: '/groups', icon: Users, label: 'Groups', color: 'from-violet-500 to-purple-500' },
+    { to: '/love', icon: Heart, label: 'Love', color: 'from-pink-500 to-rose-500' },
+    { to: '/stranger', icon: Compass, label: 'Stranger', color: 'from-amber-500 to-orange-500' },
+    { to: '/interest', icon: Ghost, label: 'Interest', color: 'from-emerald-500 to-teal-500' },
+    { to: '/practice', icon: Edit, label: 'Practice', color: 'from-sky-500 to-blue-500' },
+    { to: '/library', icon: BookOpen, label: 'Stories', color: 'from-fuchsia-500 to-pink-500' },
+];
+
+const Sidebar = ({ className = '', isMobile = false }) => {
     const { authUser, logout } = useAuthStore();
 
-    const links = [
-        { to: '/', icon: MessageSquare, label: 'Normal Chat' },
-        { to: '/groups', icon: Users, label: 'Groups' },
-        { to: '/stranger', icon: Compass, label: 'Stranger Connect' },
-        { to: '/interest', icon: Ghost, label: 'Interest Rooms' },
-        { to: '/practice', icon: Edit, label: 'English Practice' },
-        { to: '/library', icon: BookOpen, label: 'Story Library' },
-    ];
+    const handleImageUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = async () => {
+            await useAuthStore.getState().updateProfile({ profilePic: reader.result });
+        };
+    };
 
-    return (
-        <div className={`h-full flex flex-col bg-card/80 backdrop-blur-md justify-between py-6 items-center ${className}`}>
-            <div className="flex flex-col items-center w-full space-y-8">
-                {/* App Logo */}
-                <div className="size-10 bg-indigo-500 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-indigo-500/20">
-                    IC
-                </div>
-
-                {/* Nav Links */}
-                <nav className="flex flex-col space-y-2 w-full px-2">
+    // ── MOBILE BOTTOM TAB BAR ──────────────────────────────────────────────
+    if (isMobile) {
+        return (
+            <div className={`flex flex-col ${className}`}
+                style={{ background: 'rgba(5,7,14,0.97)', backdropFilter: 'blur(20px)' }}>
+                {/* Username bar */}
+                {authUser && (
+                    <div className="flex items-center justify-between px-3 py-1.5 border-b border-white/5">
+                        <div className="flex items-center gap-2">
+                            <label className="relative cursor-pointer group block">
+                                <div className="size-6 rounded-md bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white text-[10px] font-bold shrink-0 overflow-hidden border border-transparent group-hover:border-purple-400/50 transition-colors">
+                                    {authUser.profilePic ? (
+                                        <img src={authUser.profilePic} alt="Profile" className="w-full h-full object-cover" />
+                                    ) : (
+                                        authUser.username?.charAt(0).toUpperCase()
+                                    )}
+                                </div>
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-md">
+                                    <Camera className="size-3 text-white" />
+                                </div>
+                                <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                            </label>
+                            <span className="text-[11px] font-semibold text-foreground/70">{authUser.username}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            {authUser.storyStreak !== undefined && (
+                                <span className="text-[10px] text-fuchsia-400 font-bold flex items-center gap-1 bg-fuchsia-500/10 px-1.5 py-0.5 rounded border border-fuchsia-500/20">{authUser.storyStreak} 🔥</span>
+                            )}
+                            {authUser.loveStreak !== undefined && (
+                                <span className="text-[10px] text-pink-400 font-bold flex items-center gap-1 bg-pink-500/10 px-1.5 py-0.5 rounded border border-pink-500/20">{authUser.loveStreak}m 💕</span>
+                            )}
+                        </div>
+                    </div>
+                )}
+                {/* Tab icons */}
+                <div className="grid grid-cols-4 gap-y-3 py-2 px-1 w-full place-items-center safe-bottom">
                     {links.map((item) => (
                         <NavLink
                             key={item.to}
                             to={item.to}
-                            className={({ isActive }) =>
-                                `flex items-center lg:justify-start justify-center p-3 rounded-lg transition-colors relative group
-                        ${isActive ? 'bg-indigo-500/10 text-indigo-500' : 'text-muted-foreground hover:bg-white/5 hover:text-foreground'}`
-                            }
+                            end={item.to === '/'}
+                            className={({ isActive }) => clsx(
+                                "flex flex-col items-center justify-center gap-1 w-full py-2 rounded-xl transition-all duration-200 relative",
+                                isActive ? "text-white" : "text-muted-foreground/60"
+                            )}
                             title={item.label}
                         >
-                            <item.icon className="size-6 shrink-0" />
-                            <span className="hidden lg:block ml-3 font-medium truncate">{item.label}</span>
+                            {({ isActive }) => (
+                                <>
+                                    <div className={clsx(
+                                        "size-10 rounded-xl flex items-center justify-center transition-all",
+                                        isActive ? `bg-gradient-to-br ${item.color} shadow-sm` : ""
+                                    )}>
+                                        <item.icon className="size-[22px]" />
+                                    </div>
+                                    <span className="text-[11px] font-semibold truncate leading-none">{item.label}</span>
+                                </>
+                            )}
+                        </NavLink>
+                    ))}
+                    {/* Logout on mobile */}
+                    <button
+                        onClick={logout}
+                        className="flex flex-col items-center justify-center gap-1 w-full py-2 text-muted-foreground/60 hover:text-red-400 transition-all"
+                    >
+                        <div className="size-10 rounded-xl flex items-center justify-center">
+                            <LogOut className="size-[22px]" />
+                        </div>
+                        <span className="text-[11px] font-semibold">Exit</span>
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    // ── DESKTOP SIDEBAR ────────────────────────────────────────────────────
+    return (
+        <div className={`h-full flex flex-col justify-between py-4 items-center ${className}`}
+            style={{ background: 'linear-gradient(180deg, rgba(12,17,32,0.97), rgba(5,7,14,0.99))' }}>
+
+            {/* Logo */}
+            <div className="flex flex-col items-center w-full space-y-5">
+                <div className="relative group cursor-pointer">
+                    <div className="size-10 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-500/25 group-hover:shadow-indigo-500/40 transition-all group-hover:scale-105">
+                        <Flame className="size-5" />
+                    </div>
+                    <span className="hidden lg:block text-center text-[9px] font-bold mt-1.5 bg-gradient-to-r from-indigo-400 to-pink-400 bg-clip-text text-transparent tracking-wider uppercase">Ignite</span>
+                </div>
+
+                <nav className="flex flex-col space-y-0.5 w-full px-2">
+                    {links.map((item) => (
+                        <NavLink
+                            key={item.to}
+                            to={item.to}
+                            end={item.to === '/'}
+                            className={({ isActive }) => clsx(
+                                "flex items-center lg:justify-start justify-center p-2.5 rounded-xl transition-all duration-200 relative group/link",
+                                isActive ? "bg-white/[0.07] text-white" : "text-muted-foreground hover:bg-white/[0.04] hover:text-white/80"
+                            )}
+                            title={item.label}
+                        >
+                            {({ isActive }) => (
+                                <>
+                                    {isActive && (
+                                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-gradient-to-b from-indigo-400 to-purple-400" />
+                                    )}
+                                    <div className={clsx(
+                                        "size-8 rounded-lg flex items-center justify-center transition-all shrink-0",
+                                        isActive ? `bg-gradient-to-br ${item.color} shadow-sm` : "group-hover/link:bg-white/5"
+                                    )}>
+                                        <item.icon className="size-4" />
+                                    </div>
+                                    <span className={clsx("hidden lg:block ml-2.5 text-[13px] font-medium truncate", isActive && "font-semibold")}>{item.label}</span>
+                                </>
+                            )}
                         </NavLink>
                     ))}
                 </nav>
             </div>
 
-            {/* User Actions */}
-            <div className="flex flex-col items-center w-full space-y-4 px-2">
+            {/* User + Logout */}
+            <div className="flex flex-col items-center w-full space-y-1 px-2">
                 {authUser && (
-                    <div className="hidden lg:block w-full text-center py-2 text-xs font-medium text-muted-foreground truncate px-2">
-                        {authUser.username}
+                    <div className="hidden lg:flex flex-col gap-2 w-full px-2.5 py-3 rounded-xl bg-white/[0.03] border border-white/5">
+                        <div className="flex items-center gap-2">
+                            <label className="relative cursor-pointer group shrink-0 block">
+                                <div className="size-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white text-[11px] font-bold overflow-hidden border border-transparent group-hover:border-purple-400/50 transition-colors">
+                                    {authUser.profilePic ? (
+                                        <img src={authUser.profilePic} alt="Profile" className="w-full h-full object-cover" />
+                                    ) : (
+                                        authUser.username?.charAt(0).toUpperCase()
+                                    )}
+                                </div>
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-lg">
+                                    <Camera className="size-3 text-white" />
+                                </div>
+                                <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                            </label>
+                            <span className="text-xs font-medium text-foreground/80 truncate">{authUser.username}</span>
+                        </div>
+                        
+                        {(authUser.storyStreak !== undefined || authUser.loveStreak !== undefined) && (
+                            <div className="flex flex-col gap-1.5 mt-1 border-t border-white/5 pt-2">
+                                {authUser.storyStreak !== undefined && (
+                                    <div className="flex items-center justify-between text-[10px] px-1.5 rounded pb-0.5 pt-0.5">
+                                        <span className="text-fuchsia-400/80 py-0.5 flex items-center gap-1 font-medium"><BookOpen className="size-3"/> Stories</span>
+                                        <span className="text-fuchsia-400 font-bold">{authUser.storyStreak} 🔥</span>
+                                    </div>
+                                )}
+                                {authUser.loveStreak !== undefined && (
+                                    <div className="flex items-center justify-between text-[10px] px-1.5 rounded pb-0.5 pt-0.5">
+                                        <span className="text-pink-400/80 py-0.5 flex items-center gap-1 font-medium"><Heart className="size-3"/> Love</span>
+                                        <span className="text-pink-400 font-bold">{authUser.loveStreak}m 💕</span>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 )}
-                <button
-                    onClick={logout}
-                    className="p-3 w-full lg:w-auto flex items-center justify-center lg:px-4 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
-                    title="Logout"
-                >
-                    <LogOut className="size-5 shrink-0" />
-                    <span className="hidden lg:block ml-2 font-medium">Logout</span>
+                <button onClick={logout}
+                    className="p-2.5 w-full flex items-center justify-center lg:justify-start rounded-xl text-muted-foreground hover:bg-red-500/10 hover:text-red-400 transition-all"
+                    title="Logout">
+                    <LogOut className="size-4 shrink-0" />
+                    <span className="hidden lg:block ml-2.5 text-[13px] font-medium">Logout</span>
                 </button>
             </div>
         </div>

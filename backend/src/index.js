@@ -1,4 +1,8 @@
 import dotenv from 'dotenv';
+dotenv.config();
+
+import path from 'path';
+import { fileURLToPath } from 'url';
 import cors from 'cors';
 import express from 'express';
 import cookieParser from 'cookie-parser';
@@ -12,19 +16,27 @@ import interestRoutes from './routes/interest.route.js';
 import practiceRoutes from './routes/practice.route.js';
 import storyRoutes from './routes/story.route.js';
 import friendsRoutes from './routes/friends.route.js';
+import loveRoutes from './routes/love.route.js';
 
-
-dotenv.config();
 
 // Middleware
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: function(origin, callback) {
+    // Allow requests with no origin (mobile apps, curl, etc)
+    if (!origin) return callback(null, true);
+    // Allow any origin during development
+    callback(null, true);
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true
 }));
 
-app.use(express.json());
+app.use(express.json({ limit: "15mb" }));
 app.use(cookieParser());
+
+const __filenameRoot = fileURLToPath(import.meta.url);
+const __dirnameRoot = path.dirname(__filenameRoot);
+app.use('/uploads', express.static(path.join(__dirnameRoot, '../public/uploads')));
 
 // Routing
 app.use('/api/auth', authRoutes);
@@ -35,6 +47,7 @@ app.use('/api/interest', interestRoutes);
 app.use('/api/practice', practiceRoutes);
 app.use('/api/story', storyRoutes);
 app.use('/api/friends', friendsRoutes);
+app.use('/api/love', loveRoutes);
 
 
 
@@ -51,8 +64,19 @@ cron.schedule('0 0 * * *', async () => {
   await evaluateGlobalStories();
 });
 
+// In production, serve the built frontend
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, '../../frontend/dist')));
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../../frontend/dist', 'index.html'));
+  });
+}
+
 const PORT = process.env.PORT || 5000;
 
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT} `);
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running on port ${PORT}`);
 });

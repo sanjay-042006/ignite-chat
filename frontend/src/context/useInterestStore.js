@@ -56,12 +56,12 @@ export const useInterestStore = create((set, get) => ({
         }
     },
 
-    sendMessage: async (text) => {
+    sendMessage: async (messageData) => {
         const { activeRoom } = get();
         if (!activeRoom) return;
 
         try {
-            await api.post(`/interest/${activeRoom.roomId}/send`, { text });
+            await api.post(`/interest/${activeRoom.roomId}/send`, messageData);
             // The socket listener handles appending to messages automatically
         } catch (error) {
             console.error(error);

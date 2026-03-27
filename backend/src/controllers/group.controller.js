@@ -43,7 +43,7 @@ export const createGroup = async (req, res) => {
                 members: {
                     include: {
                         user: {
-                            select: { id: true, username: true },
+                            select: { id: true, username: true, profilePic: true },
                         },
                     },
                 },
@@ -72,7 +72,7 @@ export const getGroups = async (req, res) => {
             include: {
                 members: {
                     include: {
-                        user: { select: { id: true, username: true } },
+                        user: { select: { id: true, username: true, profilePic: true } },
                     },
                 },
             },
@@ -131,12 +131,12 @@ export const getGroupMessages = async (req, res) => {
 
 export const sendGroupMessage = async (req, res) => {
     try {
-        const { text } = req.body;
+        const { text, mediaUrl, mediaType } = req.body;
         const { groupId } = req.params;
         const senderId = req.user.id;
 
-        if (!text) {
-            return res.status(400).json({ error: 'Text content is required' });
+        if (!text && !mediaUrl) {
+            return res.status(400).json({ error: 'Message content or media is required' });
         }
 
         const isMember = await prisma.groupMember.findUnique({
@@ -156,7 +156,9 @@ export const sendGroupMessage = async (req, res) => {
             data: {
                 senderId,
                 groupId,
-                content: text,
+                content: text || null,
+                mediaUrl: mediaUrl || null,
+                mediaType: mediaType || null,
                 roomType: 'GROUP',
             },
             include: {
@@ -254,6 +256,38 @@ export const leaveGroup = async (req, res) => {
         res.status(200).json({ message: 'Left the group' });
     } catch (error) {
         console.error('Error in leaveGroup:', error.message);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+export const updateGroupProfilePic = async (req, res) => {
+    try {
+        const { groupId } = req.params;
+        const { profilePic } = req.body;
+        const userId = req.user.id;
+
+        if (!profilePic) {
+            return res.status(400).json({ error: 'Profile picture data is required' });
+        }
+
+        const membership = await prisma.groupMember.findUnique({
+            where: { userId_groupId: { userId, groupId } }
+        });
+
+        if (!membership || !membership.isAdmin) {
+            return res.status(403).json({ error: 'Only admins can update the group profile picture' });
+        }
+
+        const updatedGroup = await prisma.group.update({
+            where: { id: groupId },
+            data: { profilePic }
+        });
+
+        io.to(groupId).emit('groupProfileUpdated', { groupId, profilePic });
+
+        res.status(200).json(updatedGroup);
+    } catch (error) {
+        console.error('Error in updateGroupProfilePic:', error.message);
         res.status(500).json({ error: 'Internal server error' });
     }
 };

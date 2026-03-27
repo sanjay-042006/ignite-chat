@@ -12,7 +12,10 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
     cors: {
-        origin: process.env.CLIENT_URL || 'http://localhost:5173',
+        origin: function(origin, callback) {
+            if (!origin) return callback(null, true);
+            callback(null, true);
+        },
         methods: ['GET', 'POST', 'PUT', 'DELETE'],
         credentials: true,
     }
@@ -112,6 +115,30 @@ io.on('connection', (socket) => {
     handleStrangerSockets(socket, io);
     handlePracticeSockets(socket, io);
     handleStorySockets(socket, io);
+
+    // Love rooms
+    socket.on('joinLoveRoom', (connectionId) => {
+        socket.join(`love_${connectionId}`);
+    });
+
+    socket.on('leaveLoveRoom', (connectionId) => {
+        socket.leave(`love_${connectionId}`);
+    });
+
+    // Auto-join love rooms
+    prisma.loveConnection.findMany({
+        where: {
+            OR: [{ senderId: userId }, { receiverId: userId }],
+            status: 'ACCEPTED'
+        },
+        select: { id: true }
+    }).then(connections => {
+        connections.forEach(c => {
+            socket.join(`love_${c.id}`);
+        });
+    }).catch(err => {
+        console.error("Error joining love rooms:", err);
+    });
 
     socket.on('disconnect', () => {
         console.log('User disconnected:', socket.user.username, socket.id);

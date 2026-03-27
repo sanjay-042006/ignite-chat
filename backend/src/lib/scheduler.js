@@ -52,6 +52,22 @@ export const startCronJobs = () => {
                 console.log(`Cleaned up ${expiredInterestRooms.length} expired interest rooms.`);
             }
 
+            // Auto-break love connections after 5 days
+            const fiveDaysAgo = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000);
+            const expiredBreakups = await prisma.loveConnection.findMany({
+                where: {
+                    status: 'BREAKING_UP',
+                    breakupInitiatedAt: { lte: fiveDaysAgo }
+                }
+            });
+
+            for (const conn of expiredBreakups) {
+                await prisma.loveMessage.deleteMany({ where: { connectionId: conn.id } });
+                await prisma.loveConnection.delete({ where: { id: conn.id } });
+                io.to(`love_${conn.id}`).emit('breakupCompleted', { connectionId: conn.id });
+                console.log(`Auto-broke love connection ${conn.id} after 5-day cooldown.`);
+            }
+
         } catch (error) {
             console.error('Error in cron job cleanup:', error.message);
         }

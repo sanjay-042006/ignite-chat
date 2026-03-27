@@ -5,6 +5,7 @@ import { useSocketStore } from './useSocketStore';
 export const usePracticeStore = create((set, get) => ({
     status: 'idle', // 'idle', 'waiting', 'matched'
     partnerId: null,
+    partnerUsername: null,
     roomId: null,
     messages: [],
 
@@ -12,7 +13,7 @@ export const usePracticeStore = create((set, get) => ({
         const socket = useSocketStore.getState().socket;
         if (!socket) return;
 
-        set({ status: 'waiting', partnerId: null, roomId: null, messages: [] });
+        set({ status: 'waiting', partnerId: null, partnerUsername: null, roomId: null, messages: [] });
         // Tell server we want to match for practice
         socket.emit('joinPracticeQueue');
 
@@ -23,20 +24,20 @@ export const usePracticeStore = create((set, get) => ({
         socket.off('partnerLeft');
 
         socket.on('partnerLeft', () => {
-            set({ status: 'idle', partnerId: null, roomId: null, messages: [] });
+            set({ status: 'idle', partnerId: null, partnerUsername: null, roomId: null, messages: [] });
         });
 
         socket.on('practiceQueueStatus', (data) => {
             set({ status: data.state });
         });
 
-        socket.on('practiceMatch', ({ roomId, partnerId }) => {
-            set({ status: 'matched', partnerId, roomId });
+        socket.on('practiceMatch', ({ roomId, partnerId, partnerUsername }) => {
+            set({ status: 'matched', partnerId, partnerUsername, roomId });
             socket.emit('joinPracticeRoom', roomId);
         });
 
-        socket.on('practiceMatchDirect', ({ targetUserId, roomId, partnerId }) => {
-            set({ status: 'matched', partnerId, roomId });
+        socket.on('practiceMatchDirect', ({ targetUserId, roomId, partnerId, partnerUsername }) => {
+            set({ status: 'matched', partnerId: partnerId || targetUserId, partnerUsername, roomId });
             socket.emit('joinPracticeRoom', roomId);
         });
 
@@ -55,7 +56,7 @@ export const usePracticeStore = create((set, get) => ({
         }
 
         socket.emit('leavePracticeQueue');
-        set({ status: 'idle', partnerId: null, roomId: null, messages: [] });
+        set({ status: 'idle', partnerId: null, partnerUsername: null, roomId: null, messages: [] });
     },
 
     nextMatch: () => {

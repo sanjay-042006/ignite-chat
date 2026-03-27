@@ -30,12 +30,12 @@ export const handleStrangerSockets = (socket, io) => {
                 const roomName = `stranger_${room.id}`;
 
                 // Notify user2 (the one triggering)
-                io.to(socket.id).emit('strangerMatch', { roomId: room.id, targetUserId: matchedUser.id, role: 'user2' });
+                io.to(socket.id).emit('strangerMatch', { roomId: room.id, targetUserId: matchedUser.id, targetUsername: matchedUser.username, role: 'user2' });
 
                 // Notify user1 (the one waiting in queue)
                 const user1SocketIds = getReceiverSocketId(matchedUser.id);
                 user1SocketIds.forEach(socketId => {
-                    io.to(socketId).emit('strangerMatch', { roomId: room.id, targetUserId: user.id, role: 'user1' });
+                    io.to(socketId).emit('strangerMatch', { roomId: room.id, targetUserId: user.id, targetUsername: user.username, role: 'user1' });
                 });
             } else {
                 strangerQueue.push(user);
