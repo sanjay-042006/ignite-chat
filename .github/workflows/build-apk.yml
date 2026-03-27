@@ -30,15 +30,29 @@ jobs:
         working-directory: frontend
         run: npm install
 
+      - name: Force Install Capacitor CLI
+        working-directory: frontend
+        run: npm install @capacitor/core @capacitor/cli @capacitor/android
+
+      - name: Ensure Capacitor Config Exists
+        working-directory: frontend
+        run: |
+          if [ ! -f "capacitor.config.ts" ] && [ ! -f "capacitor.config.json" ]; then
+            npx cap init IgniteChat io.ignitechat.app --web-dir dist
+          fi
+
       - name: Build Frontend
         working-directory: frontend
         run: npm run build
 
-      - name: Add Capacitor Android Platform (if missing)
+      - name: Add Capacitor Android Platform
         working-directory: frontend
         run: |
-          if [ ! -d "android" ]; then npx cap add android; fi
-          npx cap sync android
+          if [ ! -d "android" ]; then
+            npx cap add android
+          else
+            npx cap sync android
+          fi
 
       - name: Make Gradle Wrapper Executable
         run: chmod +x frontend/android/gradlew
