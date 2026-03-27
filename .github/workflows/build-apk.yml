@@ -26,9 +26,6 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: Make Gradle Wrapper Executable
-        run: chmod +x frontend/android/gradlew
-
       - name: Install Frontend Dependencies
         working-directory: frontend
         run: npm install
@@ -37,9 +34,14 @@ jobs:
         working-directory: frontend
         run: npm run build
 
-      - name: Sync Capacitor
+      - name: Add Capacitor Android Platform (if missing)
         working-directory: frontend
-        run: npx cap sync android
+        run: |
+          if [ ! -d "android" ]; then npx cap add android; fi
+          npx cap sync android
+
+      - name: Make Gradle Wrapper Executable
+        run: chmod +x frontend/android/gradlew
 
       - name: Build App (APK)
         working-directory: frontend/android
