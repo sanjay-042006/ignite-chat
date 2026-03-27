@@ -5,7 +5,7 @@
   "scripts": {
     "prebuild": "cd backend && npm install && npx prisma generate && cd ../frontend && npm install",
     "build": "cd frontend && npm run build",
-    "start": "cd backend && npm start"
+    "start": "cd backend && npx prisma db push --accept-data-loss && npm start"
   },
   "engines": {
     "node": ">=18.0.0"
