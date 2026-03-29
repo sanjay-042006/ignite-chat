@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useStrangerStore } from '../context/useStrangerStore';
 import { useAuthStore } from '../context/useAuthStore';
-import { Compass, Send, XCircle, Search, RefreshCw, Sparkles, UserPlus, ArrowLeft } from 'lucide-react';
+import { Compass, Send, XCircle, Search, RefreshCw, Sparkles, UserPlus, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import clsx from 'clsx';
 import { useChatStore } from '../context/useChatStore';
 import toast from 'react-hot-toast';
@@ -10,7 +10,7 @@ import { MediaAttachment } from '../components/chat/MediaAttachment';
 import { useNavigate } from 'react-router-dom';
 
 const StrangerPage = () => {
-    const { status, messages, joinQueue, leaveQueue, nextMatch, sendMessage, partnerUsername, partnerId } = useStrangerStore();
+    const { status, messages, joinQueue, leaveQueue, nextMatch, sendMessage, partnerUsername, partnerId, iRevealed, partnerRevealed, revealIdentity } = useStrangerStore();
     const { authUser } = useAuthStore();
     const { sendFriendRequest } = useChatStore();
     const [text, setText] = useState('');
@@ -22,18 +22,19 @@ const StrangerPage = () => {
     }, [messages]);
     useEffect(() => { return () => leaveQueue(); }, [leaveQueue]);
 
-    const handleSendMessage = async (e) => {
-        e.preventDefault();
-        if (!text.trim() || status !== 'matched') return;
-        await sendMessage(text.trim());
-        setText('');
+    // Display name: hidden unless partner revealed
+    const displayName = partnerRevealed ? partnerUsername : 'Stranger';
+    const displayAvatar = partnerRevealed ? (partnerUsername?.substring(0, 2).toUpperCase() || '??') : '?';
+
+    const handleReveal = () => {
+        revealIdentity();
+        toast.success('Your identity has been revealed to the stranger!', { icon: '👁️', duration: 3000 });
     };
 
     // IDLE
     if (status === 'idle') {
         return (
             <div className="w-full h-full flex flex-col items-center justify-center p-8 relative overflow-hidden">
-                {/* Back Button */}
                 <button onClick={() => navigate('/')}
                     className="absolute top-4 left-4 z-20 flex items-center gap-1.5 text-muted-foreground/70 hover:text-foreground text-xs font-medium transition px-2.5 py-1.5 rounded-lg hover:bg-white/5">
                     <ArrowLeft className="size-4" /> Back
@@ -65,7 +66,6 @@ const StrangerPage = () => {
     if (status === 'waiting') {
         return (
             <div className="w-full h-full flex flex-col items-center justify-center p-8 relative overflow-hidden">
-                {/* Back Button */}
                 <button onClick={() => { leaveQueue(); navigate('/'); }}
                     className="absolute top-4 left-4 z-20 flex items-center gap-1.5 text-muted-foreground/70 hover:text-foreground text-xs font-medium transition px-2.5 py-1.5 rounded-lg hover:bg-white/5">
                     <ArrowLeft className="size-4" /> Back
@@ -97,18 +97,18 @@ const StrangerPage = () => {
         <div className="flex flex-col h-full relative" style={{ background: 'linear-gradient(180deg, rgba(245,158,11,0.02), transparent 30%)' }}>
             <div className="px-4 py-2.5 border-b border-white/5 flex items-center justify-between sticky top-0 z-10 backdrop-blur-xl" style={{ background: 'rgba(0,0,0,0.2)' }}>
                 <div className="flex items-center gap-3">
-                    {/* Back Button in header */}
                     <button onClick={() => { leaveQueue(); navigate('/'); }}
                         className="size-8 rounded-lg bg-white/5 border border-white/5 flex items-center justify-center text-muted-foreground hover:text-foreground transition">
                         <ArrowLeft className="size-4" />
                     </button>
                     <div className="size-9 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white font-bold text-[10px] shadow-md shadow-amber-500/20 ring-2 ring-amber-500/10">
-                        {partnerUsername ? partnerUsername.substring(0,2).toUpperCase() : '?'}
+                        {displayAvatar}
                     </div>
                     <div>
                         <div className="flex items-center gap-2">
-                            <h3 className="font-semibold text-sm">{partnerUsername || 'Stranger'}</h3>
-                            {partnerId && (
+                            <h3 className="font-semibold text-sm">{displayName}</h3>
+                            {/* Show Add Friend button only if partner revealed */}
+                            {partnerRevealed && partnerId && (
                                 <button onClick={() => {
                                     sendFriendRequest(partnerId);
                                     toast.success(`Friend request sent to ${partnerUsername || 'them'}!`);
@@ -117,10 +117,22 @@ const StrangerPage = () => {
                                 </button>
                             )}
                         </div>
-                        <p className="text-[10px] text-emerald-400/70 font-medium animate-pulse">Connected</p>
+                        <p className="text-[10px] text-emerald-400/70 font-medium animate-pulse">
+                            {partnerRevealed ? 'Identity Revealed' : 'Anonymous'}
+                        </p>
                     </div>
                 </div>
                 <div className="flex items-center gap-1.5">
+                    {/* Reveal Identity Toggle */}
+                    <button onClick={handleReveal} disabled={iRevealed}
+                        className={clsx(
+                            "flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-bold shadow-sm transition-all",
+                            iRevealed
+                                ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 cursor-default"
+                                : "bg-gradient-to-r from-violet-600/80 to-purple-600/80 text-white hover:scale-105 active:scale-95"
+                        )}>
+                        {iRevealed ? <><Eye className="size-3" /> Revealed</> : <><EyeOff className="size-3" /> Reveal Me</>}
+                    </button>
                     <button onClick={nextMatch} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-600/80 to-orange-600/80 text-white text-[10px] font-bold shadow-sm transition-all hover:scale-105 active:scale-95">
                         <RefreshCw className="size-3" /> Next
                     </button>
@@ -133,7 +145,7 @@ const StrangerPage = () => {
             <div className="flex-1 overflow-y-auto p-3 space-y-3">
                 <div className="text-center my-2">
                     <span className="bg-amber-500/5 text-amber-400/60 text-[10px] font-medium py-1 px-3 rounded-full border border-amber-500/10">
-                        You're chatting with a random stranger. Say hi! 👋
+                        You're chatting anonymously. Tap "Reveal Me" to share your name 🎭
                     </span>
                 </div>
                 {messages.map((message) => {

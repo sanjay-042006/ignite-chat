@@ -86,4 +86,14 @@ export const handleStrangerSockets = (socket, io) => {
             console.error('Error on nextStranger:', e.message);
         }
     });
+
+    // Identity reveal — user voluntarily shares their name with partner
+    socket.on('revealIdentity', (roomId) => {
+        const user = socket.user;
+        if (!roomId || !user) return;
+        // Send to everyone else in the room (the partner)
+        socket.to(`stranger_${roomId}`).emit('partnerRevealed', {
+            username: user.username
+        });
+    });
 };
