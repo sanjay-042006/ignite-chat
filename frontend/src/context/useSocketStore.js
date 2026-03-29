@@ -14,6 +14,7 @@ export const useSocketStore = create((set, get) => ({
 
         const socket = io(BASE_URL, {
             withCredentials: true,
+            transports: ['polling', 'websocket'],
         });
 
         socket.connect();

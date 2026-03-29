@@ -5,9 +5,13 @@ Write-Host "Building IgniteChat APK using Capacitor and Gradle..." -ForegroundCo
 $scriptPath = $PSScriptRoot
 Set-Location -Path $scriptPath
 
-Write-Host "Step 1: Building frontend assets..." -ForegroundColor Yellow
+Write-Host "Step 1: Building frontend assets for Mobile..." -ForegroundColor Yellow
 Set-Location -Path "frontend"
+# Temporarily overwrite .env.production with live API URL since mobile runs on localhost
+"VITE_API_URL=https://api.ignite-chat-freex.dns.army/api`n" | Out-File -FilePath .env.production -Encoding utf8
 npm run build
+# Restore original setting for web deployment
+"VITE_API_URL=/api`n" | Out-File -FilePath .env.production -Encoding utf8
 
 Write-Host "Step 2: Syncing Capacitor Android project..." -ForegroundColor Yellow
 npx cap sync android
