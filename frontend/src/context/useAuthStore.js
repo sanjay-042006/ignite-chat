@@ -52,9 +52,10 @@ export const useAuthStore = create((set, get) => ({
             toast.success("Logged in successfully");
             return { success: true };
         } catch (error) {
-            const msg = error.response?.data?.message || 'Login failed';
+            const apiurl = import.meta.env.VITE_API_URL || 'missing_url';
+            const msg = error.response?.data?.message || `Login failed: ${error.message} (URL: ${apiurl})`;
             console.error(msg);
-            toast.error(msg);
+            toast.error(msg, { duration: 8000 });
             return { success: false, message: msg };
         } finally {
             set({ isLoggingIn: false });
