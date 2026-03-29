@@ -44,7 +44,7 @@ jobs:
       - name: Build Frontend
         working-directory: frontend
         run: |
-          echo "VITE_API_URL=https://ignite-chat-production.up.railway.app/api" > .env.production
+          echo "VITE_API_URL=https://api.ignite-chat-freex.dns.army/api" > .env.production
           npm run build
       - name: Add Capacitor Android Platform
         working-directory: frontend
