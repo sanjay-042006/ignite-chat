@@ -21,7 +21,7 @@ import loveRoutes from './routes/love.route.js';
 
 // Middleware
 app.use(cors({
-  origin: function(origin, callback) {
+  origin: function (origin, callback) {
     // Allow requests with no origin (mobile apps, curl, etc)
     if (!origin) return callback(null, true);
     // Allow any origin during development

@@ -17,6 +17,8 @@ import StoryLibraryPage from './pages/StoryLibraryPage';
 import StoryDetailPage from './pages/StoryDetailPage';
 import LovePage from './pages/LovePage';
 
+import { Toaster } from 'react-hot-toast';
+
 function App() {
   const { authUser, checkAuth, isCheckingAuth } = useAuthStore();
   const { connectSocket, disconnectSocket } = useSocketStore();
@@ -44,22 +46,25 @@ function App() {
   }
 
   return (
-    <Routes>
-      <Route path="/login" element={!authUser ? <LoginPage /> : <Navigate to="/" />} />
-      <Route path="/signup" element={!authUser ? <SignupPage /> : <Navigate to="/" />} />
+    <>
+      <Toaster position="top-center" reverseOrder={false} />
+      <Routes>
+        <Route path="/login" element={!authUser ? <LoginPage /> : <Navigate to="/" />} />
+        <Route path="/signup" element={!authUser ? <SignupPage /> : <Navigate to="/" />} />
 
-      {/* Protected Routes inside Layout */}
-      <Route element={<Layout />}>
-        <Route path="/" element={authUser ? <HomePage /> : <Navigate to="/login" />} />
-        <Route path="/groups" element={authUser ? <GroupPage /> : <Navigate to="/login" />} />
-        <Route path="/love" element={authUser ? <LovePage /> : <Navigate to="/login" />} />
-        <Route path="/stranger" element={authUser ? <StrangerPage /> : <Navigate to="/login" />} />
-        <Route path="/interest" element={authUser ? <InterestPage /> : <Navigate to="/login" />} />
-        <Route path="/practice" element={authUser ? <PracticePage /> : <Navigate to="/login" />} />
-        <Route path="/library" element={authUser ? <StoryLibraryPage /> : <Navigate to="/login" />} />
-        <Route path="/stories/:id" element={authUser ? <StoryDetailPage /> : <Navigate to="/login" />} />
-      </Route>
-    </Routes>
+        {/* Protected Routes inside Layout */}
+        <Route element={<Layout />}>
+          <Route path="/" element={authUser ? <HomePage /> : <Navigate to="/login" />} />
+          <Route path="/groups" element={authUser ? <GroupPage /> : <Navigate to="/login" />} />
+          <Route path="/love" element={authUser ? <LovePage /> : <Navigate to="/login" />} />
+          <Route path="/stranger" element={authUser ? <StrangerPage /> : <Navigate to="/login" />} />
+          <Route path="/interest" element={authUser ? <InterestPage /> : <Navigate to="/login" />} />
+          <Route path="/practice" element={authUser ? <PracticePage /> : <Navigate to="/login" />} />
+          <Route path="/library" element={authUser ? <StoryLibraryPage /> : <Navigate to="/login" />} />
+          <Route path="/stories/:id" element={authUser ? <StoryDetailPage /> : <Navigate to="/login" />} />
+        </Route>
+      </Routes>
+    </>
   );
 }
 
