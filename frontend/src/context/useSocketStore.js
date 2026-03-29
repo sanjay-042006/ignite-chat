@@ -10,28 +10,30 @@ export const useSocketStore = create((set, get) => ({
 
     connectSocket: () => {
         const { authUser } = useAuthStore.getState();
-        if (!authUser || get().socket?.connected) return;
+        if (!authUser || get().socket) return; // Return if we ALREADY have a socket (don't rely on .connected)
 
         const token = localStorage.getItem('jwt');
 
         const socket = io(BASE_URL, {
             withCredentials: true,
             transports: ['polling', 'websocket'],
-            auth: { token }
+            auth: { token },
+            autoConnect: false, // Wait until event listeners are set
         });
-
-        socket.connect();
-        set({ socket });
 
         socket.on('getOnlineUsers', (userIds) => {
             set({ onlineUsers: userIds });
         });
+
+        socket.connect();
+        set({ socket });
     },
 
     disconnectSocket: () => {
-        if (get().socket?.connected) {
-            get().socket.disconnect();
-            set({ socket: null });
+        const currentSocket = get().socket;
+        if (currentSocket) {
+            currentSocket.disconnect();
+            set({ socket: null, onlineUsers: [] });
         }
     },
 }));

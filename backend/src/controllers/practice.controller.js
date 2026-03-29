@@ -46,6 +46,13 @@ export const handlePracticeSockets = (socket, io) => {
         }
     });
 
+    socket.on('disconnect', () => {
+        const index = practiceQueue.findIndex(u => u.id === socket.user?.id);
+        if (index !== -1) {
+            practiceQueue.splice(index, 1);
+        }
+    });
+
     socket.on('joinPracticeRoom', (roomId) => {
         socket.join(roomId);
     });

@@ -142,6 +142,13 @@ export const handleStorySockets = (socket, io) => {
         }
     });
 
+    socket.on('disconnect', () => {
+        const index = storyQueue.findIndex(u => u.id === socket.user?.id);
+        if (index !== -1) {
+            storyQueue.splice(index, 1);
+        }
+    });
+
     socket.on('joinStoryGroupSocket', (groupId) => {
         socket.join(`story_${groupId}`);
     });

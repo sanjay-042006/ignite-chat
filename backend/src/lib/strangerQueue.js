@@ -55,6 +55,13 @@ export const handleStrangerSockets = (socket, io) => {
         }
     });
 
+    socket.on('disconnect', () => {
+        const index = strangerQueue.findIndex(u => u.id === socket.user?.id);
+        if (index !== -1) {
+            strangerQueue.splice(index, 1);
+        }
+    });
+
     socket.on('leaveStrangerRoom', async (currentRoomId) => {
         try {
             if (currentRoomId) {
