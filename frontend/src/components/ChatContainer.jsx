@@ -43,8 +43,12 @@ const ChatContainer = () => {
             <div className="px-4 py-2.5 border-b border-white/5 flex items-center gap-3 sticky top-0 z-10 backdrop-blur-xl"
                 style={{ background: 'rgba(0,0,0,0.2)' }}>
                 <div className="relative">
-                    <div className="size-9 rounded-full bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center text-white font-bold text-sm shadow-md shadow-blue-500/20 ring-2 ring-blue-500/10">
-                        {selectedUser.username.charAt(0).toUpperCase()}
+                    <div className="size-9 rounded-full bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center text-white font-bold text-sm shadow-md shadow-blue-500/20 ring-2 ring-blue-500/10 overflow-hidden">
+                        {selectedUser.profilePic ? (
+                            <img src={selectedUser.profilePic} alt={selectedUser.username} className="w-full h-full object-cover" />
+                        ) : (
+                            selectedUser.username.charAt(0).toUpperCase()
+                        )}
                     </div>
                     <span className={clsx("absolute -bottom-0.5 -right-0.5 size-2.5 border-2 border-background rounded-full",
                         onlineUsers.includes(selectedUser.id) ? "bg-emerald-400 shadow-sm shadow-emerald-400/50" : "bg-zinc-600"
@@ -74,8 +78,12 @@ const ChatContainer = () => {
                     return (
                         <div key={message.id} className={clsx("flex w-full gap-2", isMine ? "justify-end" : "justify-start")}>
                             {!isMine && (
-                                <div className="size-6 rounded-full bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center text-white text-[10px] font-bold mt-auto shrink-0">
-                                    {selectedUser.username.charAt(0).toUpperCase()}
+                                <div className="size-6 rounded-full bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center text-white text-[10px] font-bold mt-auto shrink-0 overflow-hidden">
+                                    {selectedUser.profilePic ? (
+                                        <img src={selectedUser.profilePic} alt="" className="w-full h-full object-cover" />
+                                    ) : (
+                                        selectedUser.username.charAt(0).toUpperCase()
+                                    )}
                                 </div>
                             )}
                             <div className={clsx(

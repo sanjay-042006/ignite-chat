@@ -10,7 +10,7 @@ const HomePage = () => {
     useEffect(() => { getUsers(); }, [getUsers]);
 
     return (
-        <div className="flex h-full w-full overflow-hidden pb-16 md:pb-0">
+        <div className="flex h-full w-full overflow-hidden">
             {/* Sidebar — hidden on mobile when chat is open */}
             <div className={`
                 ${selectedUser ? 'hidden md:flex' : 'flex'}

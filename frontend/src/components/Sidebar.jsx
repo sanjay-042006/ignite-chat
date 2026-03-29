@@ -31,44 +31,15 @@ const Sidebar = ({ className = '', isMobile = false }) => {
         return (
             <div className={`flex flex-col ${className}`}
                 style={{ background: 'rgba(5,7,14,0.97)', backdropFilter: 'blur(20px)' }}>
-                {/* Username bar */}
-                {authUser && (
-                    <div className="flex items-center justify-between px-3 py-1.5 border-b border-white/5">
-                        <div className="flex items-center gap-2">
-                            <label className="relative cursor-pointer group block">
-                                <div className="size-6 rounded-md bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white text-[10px] font-bold shrink-0 overflow-hidden border border-transparent group-hover:border-purple-400/50 transition-colors">
-                                    {authUser.profilePic ? (
-                                        <img src={authUser.profilePic} alt="Profile" className="w-full h-full object-cover" />
-                                    ) : (
-                                        authUser.username?.charAt(0).toUpperCase()
-                                    )}
-                                </div>
-                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-md">
-                                    <Camera className="size-3 text-white" />
-                                </div>
-                                <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-                            </label>
-                            <span className="text-[11px] font-semibold text-foreground/70">{authUser.username}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            {authUser.storyStreak !== undefined && (
-                                <span className="text-[10px] text-fuchsia-400 font-bold flex items-center gap-1 bg-fuchsia-500/10 px-1.5 py-0.5 rounded border border-fuchsia-500/20">{authUser.storyStreak} 🔥</span>
-                            )}
-                            {authUser.loveStreak !== undefined && (
-                                <span className="text-[10px] text-pink-400 font-bold flex items-center gap-1 bg-pink-500/10 px-1.5 py-0.5 rounded border border-pink-500/20">{authUser.loveStreak}m 💕</span>
-                            )}
-                        </div>
-                    </div>
-                )}
-                {/* Tab icons */}
-                <div className="grid grid-cols-4 gap-y-3 py-2 px-1 w-full place-items-center safe-bottom">
+                {/* Scrollable tab icons */}
+                <div className="flex overflow-x-auto py-2 px-2 gap-1 w-full scrollbar-none">
                     {links.map((item) => (
                         <NavLink
                             key={item.to}
                             to={item.to}
                             end={item.to === '/'}
                             className={({ isActive }) => clsx(
-                                "flex flex-col items-center justify-center gap-1 w-full py-2 rounded-xl transition-all duration-200 relative",
+                                "flex flex-col items-center justify-center gap-0.5 min-w-[56px] py-1.5 px-1 rounded-xl transition-all duration-200 shrink-0",
                                 isActive ? "text-white" : "text-muted-foreground/60"
                             )}
                             title={item.label}
@@ -76,12 +47,12 @@ const Sidebar = ({ className = '', isMobile = false }) => {
                             {({ isActive }) => (
                                 <>
                                     <div className={clsx(
-                                        "size-10 rounded-xl flex items-center justify-center transition-all",
+                                        "size-9 rounded-xl flex items-center justify-center transition-all",
                                         isActive ? `bg-gradient-to-br ${item.color} shadow-sm` : ""
                                     )}>
-                                        <item.icon className="size-[22px]" />
+                                        <item.icon className="size-5" />
                                     </div>
-                                    <span className="text-[11px] font-semibold truncate leading-none">{item.label}</span>
+                                    <span className="text-[9px] font-semibold truncate leading-none mt-0.5">{item.label}</span>
                                 </>
                             )}
                         </NavLink>
@@ -89,12 +60,12 @@ const Sidebar = ({ className = '', isMobile = false }) => {
                     {/* Logout on mobile */}
                     <button
                         onClick={logout}
-                        className="flex flex-col items-center justify-center gap-1 w-full py-2 text-muted-foreground/60 hover:text-red-400 transition-all"
+                        className="flex flex-col items-center justify-center gap-0.5 min-w-[56px] py-1.5 px-1 text-muted-foreground/60 hover:text-red-400 transition-all shrink-0"
                     >
-                        <div className="size-10 rounded-xl flex items-center justify-center">
-                            <LogOut className="size-[22px]" />
+                        <div className="size-9 rounded-xl flex items-center justify-center">
+                            <LogOut className="size-5" />
                         </div>
-                        <span className="text-[11px] font-semibold">Exit</span>
+                        <span className="text-[9px] font-semibold mt-0.5">Exit</span>
                     </button>
                 </div>
             </div>

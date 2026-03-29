@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { usePracticeStore } from '../context/usePracticeStore';
 import { useAuthStore } from '../context/useAuthStore';
-import { BookOpen, Search, XCircle, RefreshCw, Send, CheckCircle2, Sparkles, UserPlus } from 'lucide-react';
+import { BookOpen, Search, XCircle, RefreshCw, Send, CheckCircle2, Sparkles, UserPlus, ArrowLeft } from 'lucide-react';
 import clsx from 'clsx';
 import { useChatStore } from '../context/useChatStore';
 import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
 
 const PracticePage = () => {
     const { status, messages, joinPracticeQueue, leavePracticeQueue, sendMessage, nextMatch, partnerUsername, partnerId } = usePracticeStore();
@@ -12,6 +13,7 @@ const PracticePage = () => {
     const { sendFriendRequest } = useChatStore();
     const [text, setText] = useState('');
     const messageEndRef = useRef(null);
+    const navigate = useNavigate();
 
     useEffect(() => {
         if (messageEndRef.current && messages) messageEndRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -53,7 +55,13 @@ const PracticePage = () => {
     // IDLE
     if (status === 'idle') {
         return (
-            <div className="w-full h-full flex flex-col items-center justify-center p-8 relative overflow-hidden pb-20 md:pb-8">
+            <div className="w-full h-full flex flex-col items-center justify-center p-8 relative overflow-hidden">
+                {/* Back Button */}
+                <button onClick={() => navigate('/')}
+                    className="absolute top-4 left-4 z-20 flex items-center gap-1.5 text-muted-foreground/70 hover:text-foreground text-xs font-medium transition px-2.5 py-1.5 rounded-lg hover:bg-white/5">
+                    <ArrowLeft className="size-4" /> Back
+                </button>
+
                 <div className="absolute top-1/4 left-1/3 w-72 h-72 bg-sky-500/[0.06] rounded-full blur-[100px] animate-glow-pulse" />
                 <div className="absolute bottom-1/3 right-1/4 w-80 h-80 bg-blue-500/[0.04] rounded-full blur-[100px] animate-glow-pulse" style={{ animationDelay: '1s' }} />
 
@@ -65,7 +73,7 @@ const PracticePage = () => {
                     </div>
                     <div>
                         <h2 className="text-3xl md:text-2xl font-extrabold tracking-tight bg-gradient-to-r from-sky-300 to-blue-300 bg-clip-text text-transparent">English Practice</h2>
-                        <p className="text-base md:text-sm text-muted-foreground mt-2">Practice English with strangers — AI corrects your grammar in real-time.</p>
+                        <p className="text-base md:text-sm text-muted-foreground mt-2">Improve your English with real conversations. AI monitors your grammar and provides instant corrections as you chat with a practice partner.</p>
                     </div>
                     <button onClick={joinPracticeQueue}
                         className="w-full py-4 md:py-3 rounded-xl bg-gradient-to-r from-sky-600 to-blue-600 text-white text-base md:text-sm font-bold shadow-lg shadow-sky-500/20 hover:shadow-sky-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all">
@@ -80,7 +88,13 @@ const PracticePage = () => {
     // WAITING
     if (status === 'waiting') {
         return (
-            <div className="w-full h-full flex flex-col items-center justify-center p-8 relative overflow-hidden pb-20 md:pb-8">
+            <div className="w-full h-full flex flex-col items-center justify-center p-8 relative overflow-hidden">
+                {/* Back Button */}
+                <button onClick={() => { leavePracticeQueue(); navigate('/'); }}
+                    className="absolute top-4 left-4 z-20 flex items-center gap-1.5 text-muted-foreground/70 hover:text-foreground text-xs font-medium transition px-2.5 py-1.5 rounded-lg hover:bg-white/5">
+                    <ArrowLeft className="size-4" /> Back
+                </button>
+
                 <div className="absolute inset-0 bg-gradient-to-br from-sky-500/[0.04] to-transparent" />
                 <div className="max-w-sm text-center space-y-6 flex flex-col items-center animate-slide-up relative z-10">
                     <div className="relative">
@@ -104,9 +118,14 @@ const PracticePage = () => {
 
     // MATCHED
     return (
-        <div className="flex flex-col h-full relative pb-16 md:pb-0" style={{ background: 'linear-gradient(180deg, rgba(14,165,233,0.02), transparent 30%)' }}>
+        <div className="flex flex-col h-full relative" style={{ background: 'linear-gradient(180deg, rgba(14,165,233,0.02), transparent 30%)' }}>
             <div className="px-4 py-2.5 border-b border-white/5 flex items-center justify-between sticky top-0 z-10 backdrop-blur-xl" style={{ background: 'rgba(0,0,0,0.2)' }}>
                 <div className="flex items-center gap-3">
+                    {/* Back Button */}
+                    <button onClick={() => { leavePracticeQueue(); navigate('/'); }}
+                        className="size-8 rounded-lg bg-white/5 border border-white/5 flex items-center justify-center text-muted-foreground hover:text-foreground transition">
+                        <ArrowLeft className="size-4" />
+                    </button>
                     <div className="size-9 rounded-full bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center text-white font-bold text-[10px] shadow-md shadow-sky-500/20 ring-2 ring-sky-500/10">
                         {partnerUsername ? partnerUsername.substring(0,2).toUpperCase() : <BookOpen className="size-4" />}
                     </div>

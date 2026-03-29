@@ -3,6 +3,8 @@ import { api } from './useAuthStore';
 import { useSocketStore } from './useSocketStore';
 import toast from 'react-hot-toast';
 
+const GENRES = ["Science Fiction", "Fantasy", "Mystery", "Horror", "Romance", "Adventure", "Historical Fiction", "Thriller"];
+
 export const useStoryStore = create((set, get) => ({
     // Library state
     libraryStories: [],
@@ -191,5 +193,30 @@ export const useStoryStore = create((set, get) => ({
             });
             get().fetchLibrary(); // Refresh library showing new winner
         });
+    },
+
+    // Create a story with selected friends
+    createFriendStory: async (friendIds) => {
+        try {
+            const res = await api.post('/story/friends', { friendIds });
+            const group = res.data;
+            toast.success(`Friends Story created! Genre: ${group.genre}`, { duration: 4000, icon: '📖' });
+
+            // Set active story and navigate
+            set({ activeStory: group, status: 'matched' });
+
+            // Join the socket room
+            const socket = useSocketStore.getState().socket;
+            if (socket) {
+                socket.emit('joinStoryGroupSocket', group.id);
+                get().subscribeToStoryUpdates();
+            }
+
+            return group;
+        } catch (error) {
+            const msg = error.response?.data?.error || 'Failed to create friends story';
+            toast.error(msg);
+            throw error;
+        }
     }
 }));

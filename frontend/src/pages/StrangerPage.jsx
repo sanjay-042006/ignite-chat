@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { useStrangerStore } from '../context/useStrangerStore';
 import { useAuthStore } from '../context/useAuthStore';
-import { Compass, Send, XCircle, Search, RefreshCw, Sparkles, UserPlus } from 'lucide-react';
+import { Compass, Send, XCircle, Search, RefreshCw, Sparkles, UserPlus, ArrowLeft } from 'lucide-react';
 import clsx from 'clsx';
 import { useChatStore } from '../context/useChatStore';
 import toast from 'react-hot-toast';
 import MessageInput from '../components/chat/MessageInput';
 import { MediaAttachment } from '../components/chat/MediaAttachment';
+import { useNavigate } from 'react-router-dom';
 
 const StrangerPage = () => {
     const { status, messages, joinQueue, leaveQueue, nextMatch, sendMessage, partnerUsername, partnerId } = useStrangerStore();
@@ -14,6 +15,7 @@ const StrangerPage = () => {
     const { sendFriendRequest } = useChatStore();
     const [text, setText] = useState('');
     const messageEndRef = useRef(null);
+    const navigate = useNavigate();
 
     useEffect(() => {
         if (messageEndRef.current && messages) messageEndRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -30,7 +32,13 @@ const StrangerPage = () => {
     // IDLE
     if (status === 'idle') {
         return (
-            <div className="w-full h-full flex flex-col items-center justify-center p-8 relative overflow-hidden pb-20 md:pb-8">
+            <div className="w-full h-full flex flex-col items-center justify-center p-8 relative overflow-hidden">
+                {/* Back Button */}
+                <button onClick={() => navigate('/')}
+                    className="absolute top-4 left-4 z-20 flex items-center gap-1.5 text-muted-foreground/70 hover:text-foreground text-xs font-medium transition px-2.5 py-1.5 rounded-lg hover:bg-white/5">
+                    <ArrowLeft className="size-4" /> Back
+                </button>
+
                 <div className="absolute bottom-1/3 right-1/4 w-80 h-80 bg-orange-500/[0.04] rounded-full blur-[100px] animate-glow-pulse" style={{ animationDelay: '1s' }} />
 
                 <div className="max-w-sm text-center space-y-6 animate-slide-up relative z-10">
@@ -41,7 +49,7 @@ const StrangerPage = () => {
                     </div>
                     <div>
                         <h2 className="text-3xl md:text-2xl font-extrabold tracking-tight bg-gradient-to-r from-amber-300 to-orange-300 bg-clip-text text-transparent">Stranger Connect</h2>
-                        <p className="text-base md:text-sm text-muted-foreground mt-2">Talk to random people anonymously. Identity hidden.</p>
+                        <p className="text-base md:text-sm text-muted-foreground mt-2">Connect with random strangers anonymously. Release your stress, share your thoughts, and make unexpected friendships. Your identity stays hidden until you choose to reveal it.</p>
                     </div>
                     <button onClick={joinQueue}
                         className="w-full py-4 md:py-3 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 text-white text-base md:text-sm font-bold shadow-lg shadow-amber-500/20 hover:shadow-amber-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all">
@@ -56,7 +64,13 @@ const StrangerPage = () => {
     // WAITING
     if (status === 'waiting') {
         return (
-            <div className="w-full h-full flex flex-col items-center justify-center p-8 relative overflow-hidden pb-20 md:pb-8">
+            <div className="w-full h-full flex flex-col items-center justify-center p-8 relative overflow-hidden">
+                {/* Back Button */}
+                <button onClick={() => { leaveQueue(); navigate('/'); }}
+                    className="absolute top-4 left-4 z-20 flex items-center gap-1.5 text-muted-foreground/70 hover:text-foreground text-xs font-medium transition px-2.5 py-1.5 rounded-lg hover:bg-white/5">
+                    <ArrowLeft className="size-4" /> Back
+                </button>
+
                 <div className="absolute inset-0 bg-gradient-to-br from-amber-500/[0.04] to-transparent" />
                 <div className="max-w-sm text-center space-y-6 flex flex-col items-center animate-slide-up relative z-10">
                     <div className="relative">
@@ -80,9 +94,14 @@ const StrangerPage = () => {
 
     // MATCHED
     return (
-        <div className="flex flex-col h-full relative pb-16 md:pb-0" style={{ background: 'linear-gradient(180deg, rgba(245,158,11,0.02), transparent 30%)' }}>
+        <div className="flex flex-col h-full relative" style={{ background: 'linear-gradient(180deg, rgba(245,158,11,0.02), transparent 30%)' }}>
             <div className="px-4 py-2.5 border-b border-white/5 flex items-center justify-between sticky top-0 z-10 backdrop-blur-xl" style={{ background: 'rgba(0,0,0,0.2)' }}>
                 <div className="flex items-center gap-3">
+                    {/* Back Button in header */}
+                    <button onClick={() => { leaveQueue(); navigate('/'); }}
+                        className="size-8 rounded-lg bg-white/5 border border-white/5 flex items-center justify-center text-muted-foreground hover:text-foreground transition">
+                        <ArrowLeft className="size-4" />
+                    </button>
                     <div className="size-9 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white font-bold text-[10px] shadow-md shadow-amber-500/20 ring-2 ring-amber-500/10">
                         {partnerUsername ? partnerUsername.substring(0,2).toUpperCase() : '?'}
                     </div>

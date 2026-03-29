@@ -5,7 +5,8 @@ import {
     getGlobalWinner,
     getStoryDetails,
     getMyActiveStory,
-    contributeToStory
+    contributeToStory,
+    createFriendStory
 } from '../controllers/story.controller.js';
 
 const router = express.Router();
@@ -23,6 +24,9 @@ router.get('/:id', protectRoute, getStoryDetails);
 router.get('/me/active', protectRoute, getMyActiveStory);
 
 // Contribute to the active story (day by day)
+// Create a story with friends
+router.post('/friends', protectRoute, createFriendStory);
+
 router.post('/:id/contribute', protectRoute, contributeToStory);
 
 export default router;
