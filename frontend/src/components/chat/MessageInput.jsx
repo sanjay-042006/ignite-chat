@@ -49,7 +49,7 @@ const MessageInput = ({ onSendMessage, placeholder = "Type a message...", disabl
                 const uploadUrl = apiBase === '/api' ? '/api/messages/upload' : `${apiBase}/messages/upload`;
                 const res = await axios.post(uploadUrl, formData, { withCredentials: true });
                 mediaUrl = res.data.mediaUrl;
-                mediaType = mediaFile.type.startsWith('video/') ? 'VIDEO' : (mediaFile.type.includes('gif') ? 'GIF' : 'IMAGE');
+                mediaType = mediaFile.type?.startsWith('video/') ? 'VIDEO' : (mediaFile.type?.includes('gif') ? 'GIF' : 'IMAGE');
             }
 
             await onSendMessage({ text: text.trim(), mediaUrl, mediaType });

@@ -31,12 +31,16 @@ const userSocketMap = {}; // { userId: [socketId1, socketId2] }
 // Socket Auth Middleware
 io.use(async (socket, next) => {
     try {
-        const cookies = socket.handshake.headers.cookie;
-        if (!cookies) return next(new Error('Authentication error'));
+        const tokenFromAuth = socket.handshake.auth?.token;
+        let token = tokenFromAuth;
 
-        // Quick parse cookie for 'jwt'
-        const tokenCookie = cookies.split('; ').find(row => row.startsWith('jwt='));
-        const token = tokenCookie ? tokenCookie.split('=')[1] : null;
+        if (!token) {
+            const cookies = socket.handshake.headers.cookie;
+            if (!cookies) return next(new Error('Authentication error: No cookies or token'));
+
+            const tokenCookie = cookies.split('; ').find(row => row.startsWith('jwt='));
+            token = tokenCookie ? tokenCookie.split('=')[1] : null;
+        }
 
         if (!token) return next(new Error('Authentication error: Token missing'));
 

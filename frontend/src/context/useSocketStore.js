@@ -12,9 +12,12 @@ export const useSocketStore = create((set, get) => ({
         const { authUser } = useAuthStore.getState();
         if (!authUser || get().socket?.connected) return;
 
+        const token = localStorage.getItem('jwt');
+
         const socket = io(BASE_URL, {
             withCredentials: true,
             transports: ['polling', 'websocket'],
+            auth: { token }
         });
 
         socket.connect();

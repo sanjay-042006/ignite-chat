@@ -57,6 +57,19 @@ const Sidebar = ({ className = '', isMobile = false }) => {
                             )}
                         </NavLink>
                     ))}
+                    {/* User Profile on mobile */}
+                    <label className="flex flex-col items-center justify-center gap-0.5 min-w-[56px] py-1.5 px-1 shrink-0 group cursor-pointer">
+                        <div className="size-9 rounded-xl flex items-center justify-center overflow-hidden bg-gradient-to-br from-indigo-500 to-purple-500 text-white font-bold text-[10px] shadow-sm group-hover:ring-1 group-hover:ring-purple-400">
+                            {authUser?.profilePic ? (
+                                <img src={authUser.profilePic} alt="Me" className="w-full h-full object-cover" />
+                            ) : (
+                                authUser?.username?.charAt(0).toUpperCase()
+                            )}
+                        </div>
+                        <span className="text-[9px] font-semibold text-muted-foreground/60 mt-0.5 group-hover:text-white transition-colors">Profile</span>
+                        <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                    </label>
+
                     {/* Logout on mobile */}
                     <button
                         onClick={logout}

@@ -8,6 +8,14 @@ const api = axios.create({
     timeout: 15000, // Important: prevents UI from freezing forever on blocked domains
 });
 
+api.interceptors.request.use(config => {
+    const token = localStorage.getItem('jwt');
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+});
+
 export const useAuthStore = create((set, get) => ({
     authUser: null,
     isCheckingAuth: true,
@@ -18,6 +26,7 @@ export const useAuthStore = create((set, get) => ({
     checkAuth: async () => {
         try {
             const res = await api.get('/auth/check');
+            if (res.data.token) localStorage.setItem('jwt', res.data.token);
             set({ authUser: res.data });
         } catch (error) {
             console.log('Error in checkAuth:', error);
@@ -31,6 +40,7 @@ export const useAuthStore = create((set, get) => ({
         set({ isSigningUp: true });
         try {
             const res = await api.post('/auth/signup', data);
+            if (res.data.token) localStorage.setItem('jwt', res.data.token);
             set({ authUser: res.data });
             toast.success("Account created successfully");
             return { success: true };
@@ -48,6 +58,7 @@ export const useAuthStore = create((set, get) => ({
         set({ isLoggingIn: true });
         try {
             const res = await api.post('/auth/login', data);
+            if (res.data.token) localStorage.setItem('jwt', res.data.token);
             set({ authUser: res.data });
             toast.success("Logged in successfully");
             return { success: true };
@@ -81,6 +92,7 @@ export const useAuthStore = create((set, get) => ({
     logout: async () => {
         try {
             await api.post('/auth/logout');
+            localStorage.removeItem('jwt');
             set({ authUser: null });
             toast.success("Logged out successfully");
         } catch (error) {
