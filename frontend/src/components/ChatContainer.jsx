@@ -5,6 +5,7 @@ import { useSocketStore } from '../context/useSocketStore';
 import { Loader2, Send, UserPlus } from 'lucide-react';
 import MessageInput from './chat/MessageInput';
 import { MediaAttachment } from './chat/MediaAttachment';
+import { resolveUrl } from '../lib/utils';
 import clsx from 'clsx';
 
 const ChatContainer = () => {
@@ -45,7 +46,7 @@ const ChatContainer = () => {
                 <div className="relative">
                     <div className="size-9 rounded-full bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center text-white font-bold text-sm shadow-md shadow-blue-500/20 ring-2 ring-blue-500/10 overflow-hidden">
                         {selectedUser.profilePic ? (
-                            <img src={selectedUser.profilePic} alt={selectedUser.username} className="w-full h-full object-cover" />
+                            <img src={resolveUrl(selectedUser.profilePic)} alt={selectedUser.username} className="w-full h-full object-cover" />
                         ) : (
                             selectedUser.username.charAt(0).toUpperCase()
                         )}
@@ -80,7 +81,7 @@ const ChatContainer = () => {
                             {!isMine && (
                                 <div className="size-6 rounded-full bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center text-white text-[10px] font-bold mt-auto shrink-0 overflow-hidden">
                                     {selectedUser.profilePic ? (
-                                        <img src={selectedUser.profilePic} alt="" className="w-full h-full object-cover" />
+                                        <img src={resolveUrl(selectedUser.profilePic)} alt="" className="w-full h-full object-cover" />
                                     ) : (
                                         selectedUser.username.charAt(0).toUpperCase()
                                     )}

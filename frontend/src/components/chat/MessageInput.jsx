@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { Send, Image as ImageIcon, Smile, X, Loader2 } from 'lucide-react';
-import axios from 'axios';
+import { api } from '../../context/useAuthStore';
 
 const EMOJIS = ['😀','😂','🥺','😎','😍','😭','😡','👍','🙏','🔥','❤️','✨','🎉','💯'];
 const STICKERS = [
@@ -45,9 +45,7 @@ const MessageInput = ({ onSendMessage, placeholder = "Type a message...", disabl
             if (mediaFile) {
                 const formData = new FormData();
                 formData.append('media', mediaFile);
-                const apiBase = import.meta.env.VITE_API_URL || '/api';
-                const uploadUrl = apiBase === '/api' ? '/api/messages/upload' : `${apiBase}/messages/upload`;
-                const res = await axios.post(uploadUrl, formData, { withCredentials: true });
+                const res = await api.post('/messages/upload', formData);
                 mediaUrl = res.data.mediaUrl;
                 mediaType = mediaFile.type?.startsWith('video/') ? 'VIDEO' : (mediaFile.type?.includes('gif') ? 'GIF' : 'IMAGE');
             }

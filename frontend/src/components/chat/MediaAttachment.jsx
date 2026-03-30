@@ -1,10 +1,12 @@
 export const MediaAttachment = ({ message }) => {
     if (!message.mediaUrl) return null;
 
-    // Resolve URL correctly for localhost proxy or production
-    const baseUrl = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : '';
-    // If it's a sticker (absolute URL), don't prepend baseUrl
-    const src = message.mediaUrl.startsWith('http') ? message.mediaUrl : `${baseUrl}${message.mediaUrl}`;
+    // Resolve URL correctly — in the APK VITE_BASE_URL is the absolute backend host
+    const baseUrl = import.meta.env.VITE_BASE_URL || '';
+    // If it's already an absolute URL (http/https or data:), use as-is
+    const src = message.mediaUrl.startsWith('http') || message.mediaUrl.startsWith('data:')
+        ? message.mediaUrl
+        : `${baseUrl}${message.mediaUrl}`;
 
     // Determine media type from explicit field OR fall back to extension detection
     const getMediaType = () => {

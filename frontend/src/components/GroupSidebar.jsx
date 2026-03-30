@@ -2,8 +2,9 @@ import { useGroupStore } from '../context/useGroupStore';
 import { useAuthStore } from '../context/useAuthStore';
 import { useChatStore } from '../context/useChatStore';
 import { Users, Search, Plus, X, Trash2 } from 'lucide-react';
-import clsx from 'clsx';
 import { useState, useEffect } from 'react';
+import { resolveUrl } from '../lib/utils';
+import clsx from 'clsx';
 
 const GroupSidebar = () => {
     const { groups, selectedGroup, setSelectedGroup, isGroupsLoading, createGroup, getGroups, deleteGroup } = useGroupStore();
@@ -103,7 +104,7 @@ const GroupSidebar = () => {
                                             selectedMembers.includes(user.id) ? "bg-violet-500/15 border border-violet-500/20" : "hover:bg-white/[0.04] border border-transparent"
                                         )}>
                                         {user.profilePic ? (
-                                            <img src={user.profilePic} alt={user.username} className="size-7 rounded-full object-cover border border-white/10 shrink-0" />
+                                            <img src={resolveUrl(user.profilePic)} alt={user.username} className="size-7 rounded-full object-cover border border-white/10 shrink-0" />
                                         ) : (
                                             <div className="size-7 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white font-bold text-[10px] shrink-0">
                                                 {user.username.charAt(0).toUpperCase()}
@@ -134,7 +135,7 @@ const GroupSidebar = () => {
                                             : "hover:bg-white/[0.04] border border-transparent"
                                     )}>
                                     {group.profilePic ? (
-                                        <img src={group.profilePic} alt={group.name} className="size-9 rounded-xl object-cover shadow-sm ring-2 ring-violet-500/10 shrink-0" />
+                                        <img src={resolveUrl(group.profilePic)} alt={group.name} className="size-9 rounded-xl object-cover shadow-sm ring-2 ring-violet-500/10 shrink-0" />
                                     ) : (
                                         <div className="size-9 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white shadow-sm ring-2 ring-violet-500/10 shrink-0">
                                             <Users className="size-4 text-white/80" />

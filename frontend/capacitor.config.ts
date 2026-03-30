@@ -11,7 +11,8 @@ const config: CapacitorConfig = {
   },
   server: {
     androidScheme: 'https',
-    cleartext: true
+    cleartext: true,
+    allowNavigation: ['api.ignite-chat-freex.dns.army']
   }
 };
 

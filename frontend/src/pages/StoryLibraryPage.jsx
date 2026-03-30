@@ -3,6 +3,7 @@ import { useStoryStore } from '../context/useStoryStore';
 import { useChatStore } from '../context/useChatStore';
 import { Loader2, Plus, ArrowRight, User, BookOpen, Trophy, CheckCircle2, ArrowLeft, Users, X } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { resolveUrl } from '../lib/utils';
 import clsx from 'clsx';
 
 const StoryLibraryPage = () => {
@@ -186,7 +187,7 @@ const StoryLibraryPage = () => {
                                                 isSelected ? "bg-gradient-to-br from-violet-500 to-purple-600 ring-2 ring-violet-400/30" : "bg-gradient-to-br from-indigo-500 to-purple-500"
                                             )}>
                                                 {friend.profilePic ? (
-                                                    <img src={friend.profilePic} alt="" className="w-full h-full object-cover" />
+                                                    <img src={resolveUrl(friend.profilePic)} alt="" className="w-full h-full object-cover" />
                                                 ) : (
                                                     friend.username?.charAt(0).toUpperCase()
                                                 )}

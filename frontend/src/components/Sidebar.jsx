@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import { useAuthStore } from '../context/useAuthStore';
 import { LogOut, MessageSquare, Ghost, Users, Compass, BookOpen, Edit, Heart, Flame, Camera } from 'lucide-react';
+import { resolveUrl } from '../lib/utils';
 import clsx from 'clsx';
 
 const links = [
@@ -61,7 +62,7 @@ const Sidebar = ({ className = '', isMobile = false }) => {
                     <label className="flex flex-col items-center justify-center gap-0.5 min-w-[56px] py-1.5 px-1 shrink-0 group cursor-pointer">
                         <div className="size-9 rounded-xl flex items-center justify-center overflow-hidden bg-gradient-to-br from-indigo-500 to-purple-500 text-white font-bold text-[10px] shadow-sm group-hover:ring-1 group-hover:ring-purple-400">
                             {authUser?.profilePic ? (
-                                <img src={authUser.profilePic} alt="Me" className="w-full h-full object-cover" />
+                                <img src={resolveUrl(authUser.profilePic)} alt="Me" className="w-full h-full object-cover" />
                             ) : (
                                 authUser?.username?.charAt(0).toUpperCase()
                             )}
@@ -138,7 +139,7 @@ const Sidebar = ({ className = '', isMobile = false }) => {
                             <label className="relative cursor-pointer group shrink-0 block">
                                 <div className="size-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white text-[11px] font-bold overflow-hidden border border-transparent group-hover:border-purple-400/50 transition-colors">
                                     {authUser.profilePic ? (
-                                        <img src={authUser.profilePic} alt="Profile" className="w-full h-full object-cover" />
+                                        <img src={resolveUrl(authUser.profilePic)} alt="Profile" className="w-full h-full object-cover" />
                                     ) : (
                                         authUser.username?.charAt(0).toUpperCase()
                                     )}

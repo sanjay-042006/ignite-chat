@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAuthStore } from '../context/useAuthStore';
 import { Link } from 'react-router-dom';
 import { Eye, EyeOff, Loader2, Mail, User, Lock, Flame, ArrowRight, Zap, Camera } from 'lucide-react';
+import { resolveUrl } from '../lib/utils';
 
 const SignupPage = () => {
     const [showPassword, setShowPassword] = useState(false);
@@ -45,7 +46,7 @@ const SignupPage = () => {
                             <div className="relative group cursor-pointer">
                                 <div className="size-20 rounded-full bg-white/[0.04] border border-white/10 flex items-center justify-center overflow-hidden hover:border-purple-500/50 transition">
                                     {formData.profilePic ? (
-                                        <img src={formData.profilePic} alt="Profile" className="w-full h-full object-cover" />
+                                        <img src={resolveUrl(formData.profilePic)} alt="Profile" className="w-full h-full object-cover" />
                                     ) : (
                                         <Camera className="size-8 text-muted-foreground/50 group-hover:text-purple-400 transition" />
                                     )}

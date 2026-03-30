@@ -5,6 +5,7 @@ import { useSocketStore } from '../context/useSocketStore';
 import { Loader2, Send, Users, LogOut, Trash2, ChevronDown, ChevronUp, Crown, Camera, ArrowLeft } from 'lucide-react';
 import MessageInput from './chat/MessageInput';
 import { MediaAttachment } from './chat/MediaAttachment';
+import { resolveUrl } from '../lib/utils';
 import clsx from 'clsx';
 
 const GroupChatContainer = () => {
@@ -51,7 +52,7 @@ const GroupChatContainer = () => {
                         <div className="flex items-center gap-3 cursor-pointer group" onClick={() => setShowMembers(!showMembers)}>
                         <div className="relative">
                             {selectedGroup.profilePic ? (
-                                <img src={selectedGroup.profilePic} alt={selectedGroup.name} className="size-10 rounded-xl object-cover shadow-md shadow-violet-500/20 ring-2 ring-violet-500/10" />
+                                <img src={resolveUrl(selectedGroup.profilePic)} alt={selectedGroup.name} className="size-10 rounded-xl object-cover shadow-md shadow-violet-500/20 ring-2 ring-violet-500/10" />
                             ) : (
                                 <div className="size-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white shadow-md shadow-violet-500/20 ring-2 ring-violet-500/10">
                                     <Users className="size-5" />
@@ -106,7 +107,7 @@ const GroupChatContainer = () => {
                                 <div key={member.id} className="flex items-center gap-2.5 p-1.5 rounded-lg hover:bg-white/[0.03] transition">
                                     <div className="relative shrink-0">
                                         {member.user?.profilePic ? (
-                                            <img src={member.user.profilePic} alt={member.user.username} className="size-6 rounded-full object-cover border border-white/10" />
+                                            <img src={resolveUrl(member.user.profilePic)} alt={member.user.username} className="size-6 rounded-full object-cover border border-white/10" />
                                         ) : (
                                             <div className="size-6 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white text-[9px] font-bold">
                                                 {member.user?.username?.charAt(0).toUpperCase() || '?'}
