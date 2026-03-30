@@ -61,6 +61,10 @@ model Message {
 
   roomType   RoomType @default(DIRECT)
   roomId     String?  // Polymorphic ID for Stranger/Interest/Practice/Story rooms
+
+  replyToId  String?
+  replyTo    Message?  @relation("MessageReply", fields: [replyToId], references: [id])
+  replies    Message[] @relation("MessageReply")
 }
 
 enum MediaType {

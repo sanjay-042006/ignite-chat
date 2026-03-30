@@ -85,6 +85,11 @@ export const getMessages = async (req, res) => {
                     { senderId: userToChatId, receiverId: myId, roomType: 'DIRECT' },
                 ],
             },
+            include: {
+                replyTo: {
+                    select: { id: true, content: true, senderId: true, mediaUrl: true, mediaType: true }
+                }
+            },
             orderBy: {
                 createdAt: 'asc',
             },
@@ -99,7 +104,7 @@ export const getMessages = async (req, res) => {
 
 export const sendMessage = async (req, res) => {
     try {
-        const { text, mediaUrl, mediaType } = req.body;
+        const { text, mediaUrl, mediaType, replyToId } = req.body;
         const { id: receiverId } = req.params;
         const senderId = req.user.id;
 
@@ -129,6 +134,12 @@ export const sendMessage = async (req, res) => {
                 mediaUrl: mediaUrl || null,
                 mediaType: mediaType || null,
                 roomType: 'DIRECT',
+                replyToId: replyToId || null,
+            },
+            include: {
+                replyTo: {
+                    select: { id: true, content: true, senderId: true, mediaUrl: true, mediaType: true }
+                }
             },
         });
 

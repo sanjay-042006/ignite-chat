@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useInterestStore } from '../context/useInterestStore';
 import { useAuthStore } from '../context/useAuthStore';
-import { Ghost, Loader2, Send, LogOut, Code, Briefcase, Gamepad2, Heart, Music, Plane, UserPlus, ArrowLeft } from 'lucide-react';
+import { Ghost, Loader2, Send, LogOut, Code, Briefcase, Gamepad2, Heart, Music, Plane, UserPlus, ArrowLeft, Film, Dumbbell, BookOpen, Palette, FlaskConical, Camera, Bitcoin, Trophy, Utensils, Tv } from 'lucide-react';
 import clsx from 'clsx';
 import { useChatStore } from '../context/useChatStore';
 import toast from 'react-hot-toast';
@@ -16,6 +16,16 @@ const TOPICS = [
     { id: 'Dating', icon: Heart, color: 'from-pink-500 to-rose-500' },
     { id: 'Music', icon: Music, color: 'from-fuchsia-500 to-pink-500' },
     { id: 'Travel', icon: Plane, color: 'from-sky-500 to-blue-500' },
+    { id: 'Anime', icon: Tv, color: 'from-red-500 to-orange-500' },
+    { id: 'Movies', icon: Film, color: 'from-amber-500 to-yellow-500' },
+    { id: 'Sports', icon: Trophy, color: 'from-lime-500 to-green-500' },
+    { id: 'Food', icon: Utensils, color: 'from-orange-500 to-amber-500' },
+    { id: 'Science', icon: FlaskConical, color: 'from-cyan-500 to-teal-500' },
+    { id: 'Art', icon: Palette, color: 'from-rose-500 to-fuchsia-500' },
+    { id: 'Fitness', icon: Dumbbell, color: 'from-green-500 to-emerald-500' },
+    { id: 'Photography', icon: Camera, color: 'from-indigo-500 to-violet-500' },
+    { id: 'Crypto', icon: Bitcoin, color: 'from-yellow-500 to-orange-500' },
+    { id: 'Books', icon: BookOpen, color: 'from-teal-500 to-cyan-500' },
 ];
 
 const InterestPage = () => {

@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Send, Image as ImageIcon, Smile, X, Loader2 } from 'lucide-react';
+import { Send, Image as ImageIcon, Smile, X, Loader2, Reply } from 'lucide-react';
 import { api } from '../../context/useAuthStore';
 
 const EMOJIS = ['😀','😂','🥺','😎','😍','😭','😡','👍','🙏','🔥','❤️','✨','🎉','💯'];
@@ -9,7 +9,7 @@ const STICKERS = [
   'https://cdn-icons-png.flaticon.com/512/4604/4604297.png'
 ];
 
-const MessageInput = ({ onSendMessage, placeholder = "Type a message...", disabled = false }) => {
+const MessageInput = ({ onSendMessage, placeholder = "Type a message...", disabled = false, replyTo = null, onCancelReply = null }) => {
     const [text, setText] = useState('');
     const [mediaPreview, setMediaPreview] = useState(null);
     const [mediaFile, setMediaFile] = useState(null);
@@ -50,7 +50,8 @@ const MessageInput = ({ onSendMessage, placeholder = "Type a message...", disabl
                 mediaType = mediaFile.type?.startsWith('video/') ? 'VIDEO' : (mediaFile.type?.includes('gif') ? 'GIF' : 'IMAGE');
             }
 
-            await onSendMessage({ text: text.trim(), mediaUrl, mediaType });
+            await onSendMessage({ text: text.trim(), mediaUrl, mediaType, replyToId: replyTo?.id || null });
+            if (onCancelReply) onCancelReply();
             
             setText('');
             removeMedia();
@@ -68,7 +69,20 @@ const MessageInput = ({ onSendMessage, placeholder = "Type a message...", disabl
     };
 
     return (
-        <div className="flex flex-col gap-2 w-full relative">
+        <div className="flex flex-col gap-1 w-full relative">
+            {/* Reply preview bar */}
+            {replyTo && (
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 border border-blue-500/15 rounded-xl mx-0.5">
+                    <Reply className="size-3.5 text-blue-400 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                        <p className="text-[10px] font-semibold text-blue-400">Replying</p>
+                        <p className="text-[11px] text-white/60 truncate">{replyTo.content || (replyTo.mediaUrl ? '📎 Media' : '...')}</p>
+                    </div>
+                    <button type="button" onClick={onCancelReply} className="text-muted-foreground hover:text-white shrink-0 p-0.5">
+                        <X className="size-3.5" />
+                    </button>
+                </div>
+            )}
             {showEmojis && (
                 <div className="absolute bottom-full left-0 mb-4 bg-[#0c1120] border border-white/10 rounded-xl p-3 shadow-xl w-64 z-50">
                     <div className="flex justify-between items-center mb-2">
@@ -103,18 +117,18 @@ const MessageInput = ({ onSendMessage, placeholder = "Type a message...", disabl
                 </div>
             )}
 
-            <form onSubmit={handleSubmit} className="flex gap-2 w-full relative">
-                <button type="button" onClick={() => setShowEmojis(!showEmojis)} className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 text-muted-foreground hover:text-white transition-colors shrink-0">
-                    <Smile className="size-5" />
+            <form onSubmit={handleSubmit} className="flex gap-1.5 w-full relative overflow-hidden items-end">
+                <button type="button" onClick={() => setShowEmojis(!showEmojis)} className="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 text-muted-foreground hover:text-white transition-colors shrink-0">
+                    <Smile className="size-4" />
                 </button>
-                <button type="button" onClick={() => fileInputRef.current?.click()} className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 text-muted-foreground hover:text-white transition-colors shrink-0">
-                    <ImageIcon className="size-5" />
+                <button type="button" onClick={() => fileInputRef.current?.click()} className="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 text-muted-foreground hover:text-white transition-colors shrink-0">
+                    <ImageIcon className="size-4" />
                     <input type="file" ref={fileInputRef} onChange={handleFileSelect} className="hidden" accept="image/*,video/*,.gif" />
                 </button>
                 <input
                     type="text"
                     placeholder={placeholder}
-                    className="flex-1 bg-white/5 border border-white/5 rounded-xl px-3.5 py-2.5 text-base focus:outline-none focus:ring-1 focus:ring-blue-500/40 focus:border-blue-500/20 transition placeholder:text-muted-foreground/30"
+                    className="flex-1 min-w-0 bg-white/5 border border-white/5 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500/40 focus:border-blue-500/20 transition placeholder:text-muted-foreground/30"
                     value={text}
                     onChange={(e) => setText(e.target.value)}
                     disabled={disabled || isUploading}
@@ -122,7 +136,7 @@ const MessageInput = ({ onSendMessage, placeholder = "Type a message...", disabl
                 <button
                     type="submit"
                     disabled={disabled || isUploading || (!text.trim() && !mediaFile)}
-                    className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 disabled:opacity-30 disabled:cursor-not-allowed text-white rounded-xl px-4 flex items-center justify-center shadow-md shadow-blue-500/20 hover:shadow-blue-500/30 transition-all disabled:shadow-none shrink-0"
+                    className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 disabled:opacity-30 disabled:cursor-not-allowed text-white rounded-xl p-2 flex items-center justify-center shadow-md shadow-blue-500/20 hover:shadow-blue-500/30 transition-all disabled:shadow-none shrink-0"
                 >
                     {isUploading ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
                 </button>

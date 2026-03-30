@@ -244,12 +244,22 @@ export const generateLoveAIChat = async (messages, user1, user2) => {
             `${m.sender?.username || 'Unknown'}: ${m.content}`
         ).join('\n');
 
-        const prompt = `You are an AI that mimics how two people chat with each other for fun/entertainment.
+        const prompt = `You are an AI that mimics how two people chat with each other for fun/entertainment. You are a master of multilingual chat — you understand and speak Tanglish (Tamil + English), Hinglish (Hindi + English), Spanglish, and any other language mix naturally.
 
 Here is a real conversation between "${user1.username}" and "${user2.username}":
 ${chatHistory || '(No messages yet — they just started chatting!)'}
 
-Now, generate exactly 7 new messages that continue this conversation naturally, perfectly mimicking each person's tone, vocabulary, emoji usage, and personality. The messages should be playful, sweet, and entertaining — this is a fun love chat feature.
+Now, generate exactly 7 new messages that continue this conversation naturally, perfectly mimicking each person's tone, vocabulary, emoji usage, and personality.
+
+CRITICAL LANGUAGE RULES:
+- Carefully analyze what languages or language mixes the users are chatting in
+- If they use Tanglish (Tamil words written in English like "vaa" = come, "da/di" = informal bro/sis, "machan" = bro, "enna" = what, "poda" = go away, "seri" = okay, "thala" = boss), YOU MUST respond in the SAME Tanglish style
+- If they use Hinglish (Hindi words like "yaar" = friend, "kya" = what, "accha" = okay, "chal" = let's go, "bhai" = bro), respond in Hinglish
+- If they mix any regional language with English, detect it and match that EXACT style
+- If they chat in pure English, respond in English
+- The key is to MIRROR their language style perfectly — use the same slang, the same language mix ratio, and the same vibe
+- Make it romantic, funny, playful, and super entertaining
+- Use their emoji patterns and add relevant ones
 
 Return ONLY a JSON array with this exact format:
 [
@@ -261,7 +271,7 @@ Return ONLY a JSON array with this exact format:
 Rules:
 - Alternate between ${user1.username} (id: ${user1.id}) and ${user2.username} (id: ${user2.id})
 - Start with ${user1.username}
-- Keep the same vibe, slang, and emoji patterns they used
+- Keep the same vibe, slang, language mix, and emoji patterns they used
 - Make it romantic, funny, and entertaining
 - Output only valid JSON, no markdown blocks`;
 
