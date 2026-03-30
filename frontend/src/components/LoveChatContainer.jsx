@@ -2,14 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import { useLoveStore } from '../context/useLoveStore';
 import { useAuthStore } from '../context/useAuthStore';
 import { useSocketStore } from '../context/useSocketStore';
-import { Loader2, Send, Heart, Sparkles, Timer, HeartCrack, ShieldCheck, XCircle } from 'lucide-react';
+import { Loader2, Send, Heart, Sparkles, Timer, HeartCrack, ShieldCheck, XCircle, ArrowLeft } from 'lucide-react';
 import MessageInput from './chat/MessageInput';
 import { MediaAttachment } from './chat/MediaAttachment';
 import clsx from 'clsx';
 
 const LoveChatContainer = () => {
     const {
-        messages, getMessages, isMessagesLoading, selectedConnection,
+        messages, getMessages, isMessagesLoading, selectedConnection, setSelectedConnection,
         subscribeToMessages, unsubscribeFromMessages, sendMessage,
         triggerAIChat, isAIChatActive, aiTimeRemaining,
         initiateBreakup, acceptBreakup, cancelBreakup
@@ -62,8 +62,14 @@ const LoveChatContainer = () => {
             <div className="px-4 py-2.5 border-b border-white/5 flex items-center justify-between sticky top-0 z-10 backdrop-blur-xl"
                 style={{ background: 'rgba(0,0,0,0.2)' }}>
                 <div className="flex items-center gap-3">
-                    <div className="relative">
-                        <div className="size-9 rounded-full bg-gradient-to-br from-pink-500 via-rose-500 to-fuchsia-500 flex items-center justify-center text-white font-bold text-sm shadow-md shadow-pink-500/20 ring-2 ring-pink-500/20">
+                    <button
+                        onClick={() => setSelectedConnection(null)}
+                        className="md:hidden size-8 shrink-0 rounded-lg bg-white/5 border border-white/5 flex items-center justify-center text-muted-foreground hover:text-foreground transition"
+                    >
+                        <ArrowLeft className="size-4" />
+                    </button>
+                    <div className="relative shrink-0">
+                        <div className="size-9 rounded-full bg-gradient-to-br from-pink-500 via-rose-500 to-fuchsia-500 flex items-center justify-center text-white font-bold text-sm shadow-md shadow-pink-500/20 ring-2 ring-pink-500/20 shrink-0">
                             {partner.username.charAt(0).toUpperCase()}
                         </div>
                         <span className={clsx("absolute -bottom-0.5 -right-0.5 size-2.5 border-2 border-background rounded-full",

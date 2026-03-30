@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useChatStore } from '../context/useChatStore';
 import { useAuthStore } from '../context/useAuthStore';
 import { useSocketStore } from '../context/useSocketStore';
-import { Loader2, Send, UserPlus, Reply } from 'lucide-react';
+import { Loader2, Send, UserPlus, Reply, ArrowLeft } from 'lucide-react';
 import MessageInput from './chat/MessageInput';
 import { MediaAttachment } from './chat/MediaAttachment';
 import SwipeableMessage from './chat/SwipeableMessage';
@@ -11,7 +11,7 @@ import { resolveUrl } from '../lib/utils';
 import clsx from 'clsx';
 
 const ChatContainer = () => {
-    const { messages, getMessages, isMessagesLoading, selectedUser, subscribeToMessages, unsubscribeFromMessages, sendMessage } = useChatStore();
+    const { messages, getMessages, isMessagesLoading, selectedUser, setSelectedUser, subscribeToMessages, unsubscribeFromMessages, sendMessage } = useChatStore();
     const { authUser } = useAuthStore();
     const { onlineUsers } = useSocketStore();
     const [text, setText] = useState('');
@@ -54,8 +54,14 @@ const ChatContainer = () => {
             {/* Header */}
             <div className="px-4 py-2.5 border-b border-white/5 flex items-center gap-3 sticky top-0 z-10 backdrop-blur-xl"
                 style={{ background: 'rgba(0,0,0,0.2)' }}>
+                <button
+                    onClick={() => setSelectedUser(null)}
+                    className="md:hidden size-8 shrink-0 rounded-lg bg-white/5 border border-white/5 flex items-center justify-center text-muted-foreground hover:text-foreground transition"
+                >
+                    <ArrowLeft className="size-4" />
+                </button>
                 <div
-                    className="relative cursor-pointer"
+                    className="relative cursor-pointer shrink-0"
                     onClick={() => selectedUser.profilePic && setViewingPhoto({ src: resolveUrl(selectedUser.profilePic), alt: selectedUser.username })}
                 >
                     <div className="size-9 rounded-full bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center text-white font-bold text-sm shadow-md shadow-blue-500/20 ring-2 ring-blue-500/10 overflow-hidden">
