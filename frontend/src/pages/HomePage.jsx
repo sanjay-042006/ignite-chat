@@ -25,15 +25,6 @@ const HomePage = () => {
                 ${selectedUser ? 'flex' : 'hidden md:flex'}
                 flex-1 flex-col h-full relative border-l border-white/5 min-w-0
             `}>
-                {/* Mobile back button */}
-                {selectedUser && (
-                    <button
-                        onClick={() => setSelectedUser(null)}
-                        className="md:hidden absolute top-2.5 left-14 z-30 size-8 rounded-lg bg-white/5 border border-white/5 flex items-center justify-center text-muted-foreground hover:text-foreground transition"
-                    >
-                        <ArrowLeft className="size-4" />
-                    </button>
-                )}
                 {selectedUser ? <ChatContainer /> : <NoChatSelected />}
             </div>
         </div>
