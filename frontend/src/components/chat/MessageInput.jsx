@@ -1,6 +1,10 @@
 import { useState, useRef } from 'react';
-import { Send, Image as ImageIcon, Smile, X, Loader2, Reply } from 'lucide-react';
+import { Send, Image as ImageIcon, Smile, X, Loader2, Reply, Search } from 'lucide-react';
 import { api } from '../../context/useAuthStore';
+import { Grid } from '@giphy/react-components';
+import { GiphyFetch } from '@giphy/js-fetch-api';
+
+const gf = new GiphyFetch('sXpGFDGZs0Dv1mmtVfsPmdH1270gEQam');
 
 const EMOJIS = ['😀','😂','🥺','😎','😍','😭','😡','👍','🙏','🔥','❤️','✨','🎉','💯'];
 const STICKERS = [
@@ -15,7 +19,21 @@ const MessageInput = ({ onSendMessage, placeholder = "Type a message...", disabl
     const [mediaFile, setMediaFile] = useState(null);
     const [isUploading, setIsUploading] = useState(false);
     const [showEmojis, setShowEmojis] = useState(false);
+    const [activeTab, setActiveTab] = useState('emojis');
+    const [gifSearch, setGifSearch] = useState('');
     const fileInputRef = useRef(null);
+
+    const fetchGifs = (offset) => {
+        if (gifSearch) return gf.search(gifSearch, { offset, limit: 10 });
+        return gf.trending({ offset, limit: 10 });
+    };
+
+    const sendGif = async (gif, e) => {
+        e.preventDefault();
+        await onSendMessage({ text: '', mediaUrl: gif.images.fixed_height.url, mediaType: 'GIF', replyToId: replyTo?.id || null });
+        if (onCancelReply) onCancelReply();
+        setShowEmojis(false);
+    };
 
     const handleFileSelect = (e) => {
         const file = e.target.files[0];
@@ -84,22 +102,60 @@ const MessageInput = ({ onSendMessage, placeholder = "Type a message...", disabl
                 </div>
             )}
             {showEmojis && (
-                <div className="absolute bottom-full left-0 mb-4 bg-[#0c1120] border border-white/10 rounded-xl p-3 shadow-xl w-64 z-50">
-                    <div className="flex justify-between items-center mb-2">
-                        <div className="text-xs text-muted-foreground font-semibold tracking-wider uppercase">Emojis & Stickers</div>
-                        <button type="button" onClick={() => setShowEmojis(false)} className="text-muted-foreground hover:text-white"><X className="size-3" /></button>
+                <div className="absolute bottom-full left-0 mb-4 bg-[#0c1120] border border-white/10 rounded-xl shadow-xl w-72 z-50 overflow-hidden flex flex-col h-80">
+                    <div className="flex justify-between items-center p-3 border-b border-white/10 bg-black/40">
+                        <div className="flex gap-4">
+                            <button type="button" onClick={() => setActiveTab('emojis')} className={`text-xs font-semibold tracking-wider uppercase transition-colors ${activeTab === 'emojis' ? 'text-blue-400' : 'text-muted-foreground hover:text-white'}`}>Emojis</button>
+                            <button type="button" onClick={() => setActiveTab('stickers')} className={`text-xs font-semibold tracking-wider uppercase transition-colors ${activeTab === 'stickers' ? 'text-blue-400' : 'text-muted-foreground hover:text-white'}`}>Stickers</button>
+                            <button type="button" onClick={() => setActiveTab('gifs')} className={`text-xs font-semibold tracking-wider uppercase transition-colors ${activeTab === 'gifs' ? 'text-blue-400' : 'text-muted-foreground hover:text-white'}`}>GIFs</button>
+                        </div>
+                        <button type="button" onClick={() => setShowEmojis(false)} className="text-muted-foreground hover:text-white p-1 bg-white/5 rounded-full"><X className="size-3" /></button>
                     </div>
-                    <div className="flex flex-wrap gap-2 mb-4">
-                        {EMOJIS.map(e => (
-                            <button key={e} type="button" onClick={() => setText(prev => prev + e)} className="text-xl hover:scale-125 transition-transform">{e}</button>
-                        ))}
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                        {STICKERS.map(s => (
-                            <button key={s} type="button" onClick={() => sendSticker(s)} className="size-10 rounded-lg hover:bg-white/10 p-1 border border-transparent transition-all">
-                                <img src={s} alt="sticker" className="w-full h-full object-contain" />
-                            </button>
-                        ))}
+
+                    <div className="flex-1 overflow-y-auto p-3 custom-scrollbar">
+                        {activeTab === 'emojis' && (
+                            <div className="flex flex-wrap gap-2">
+                                {EMOJIS.map(e => (
+                                    <button key={e} type="button" onClick={() => setText(prev => prev + e)} className="text-2xl hover:scale-125 transition-transform p-1">{e}</button>
+                                ))}
+                            </div>
+                        )}
+
+                        {activeTab === 'stickers' && (
+                            <div className="flex flex-wrap gap-2">
+                                {STICKERS.map(s => (
+                                    <button key={s} type="button" onClick={() => sendSticker(s)} className="size-12 rounded-lg hover:bg-white/10 p-1 border border-transparent transition-all">
+                                        <img src={s} alt="sticker" className="w-full h-full object-contain drop-shadow-sm" />
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+
+                        {activeTab === 'gifs' && (
+                            <div className="flex flex-col h-full gap-2">
+                                <div className="relative">
+                                    <Search className="absolute left-2.5 top-2 size-3.5 text-muted-foreground" />
+                                    <input 
+                                        type="text" 
+                                        placeholder="Search Tenor/Giphy..." 
+                                        value={gifSearch}
+                                        onChange={(e) => setGifSearch(e.target.value)}
+                                        className="w-full bg-black/50 border border-white/10 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500/50"
+                                    />
+                                </div>
+                                <div className="flex-1 overflow-hidden min-h-0 bg-black/20 rounded-lg">
+                                    <Grid 
+                                        width={260} 
+                                        columns={2} 
+                                        fetchGifs={fetchGifs} 
+                                        key={gifSearch} 
+                                        onGifClick={sendGif} 
+                                        noResultsMessage={<div className="text-center text-xs text-muted-foreground mt-4">No GIFs found</div>}
+                                        hideContextMenu={true}
+                                    />
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

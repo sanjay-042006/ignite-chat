@@ -21,9 +21,16 @@ export const useSocketStore = create((set, get) => ({
     socket: null,
     onlineUsers: [],
 
-    connectSocket: () => {
+    connectSocket: async () => {
         const { authUser } = useAuthStore.getState();
         if (!authUser || get().socket) return; // Return if we ALREADY have a socket (don't rely on .connected)
+
+        try {
+            const { display } = await LocalNotifications.checkPermissions();
+            if (display !== 'granted') {
+                await LocalNotifications.requestPermissions();
+            }
+        } catch (e) { console.log("Local notifications permission error (likely web):", e); }
 
         const token = localStorage.getItem('jwt');
 
@@ -47,7 +54,6 @@ export const useSocketStore = create((set, get) => ({
                             id: Math.floor(Math.random() * 100000),
                             title: 'New Message',
                             body: msg.content || 'Sent an attachment',
-                            schedule: { at: new Date(Date.now() + 100) },
                             sound: null,
                             attachments: null,
                             actionTypeId: "",
@@ -67,7 +73,6 @@ export const useSocketStore = create((set, get) => ({
                             id: Math.floor(Math.random() * 100000),
                             title: '💕 Love Message',
                             body: msg.content || (msg.isAI ? 'Sent an AI message' : 'Sent an attachment'),
-                            schedule: { at: new Date(Date.now() + 100) },
                         }]
                     });
                 } catch (e) { console.error("Local notification error", e); }
