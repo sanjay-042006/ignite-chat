@@ -1,6 +1,8 @@
 import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 
+import PracticeInviteListener from './PracticeInviteListener';
+
 const Layout = () => {
     const location = useLocation();
     // Show mobile tab bar only on the home page
@@ -8,6 +10,7 @@ const Layout = () => {
 
     return (
         <div className="flex flex-col md:flex-row h-[100dvh] bg-background text-foreground overflow-hidden">
+            <PracticeInviteListener />
             {/* Desktop Sidebar — always visible */}
             <Sidebar className="w-16 lg:w-60 border-r border-white/5 hidden md:flex shrink-0 z-20" />
 

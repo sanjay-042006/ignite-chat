@@ -286,6 +286,7 @@ model LoveMessage {
   mediaUrl     String?
   mediaType    MediaType?
   isAI         Boolean        @default(false)
+  isRead       Boolean        @default(false)
   createdAt    DateTime       @default(now())
 
   connectionId String

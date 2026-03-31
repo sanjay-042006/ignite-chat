@@ -26,6 +26,7 @@ export const useChatStore = create((set, get) => ({
         try {
             const res = await api.get(`/messages/${userId}`);
             set({ messages: res.data });
+            get().markMessagesAsSeen(userId); // Automatically mark as read when chat is opened
         } catch (error) {
             console.error(error);
         } finally {
@@ -49,7 +50,7 @@ export const useChatStore = create((set, get) => ({
     },
 
     subscribeToMessages: () => {
-        const { selectedUser } = get();
+        const { selectedUser, markMessagesAsSeen } = get();
         if (!selectedUser) return;
 
         const socket = useSocketStore.getState().socket;
@@ -61,12 +62,38 @@ export const useChatStore = create((set, get) => ({
             set({
                 messages: [...get().messages, newMessage],
             });
+
+            // Automatically mark as seen if we are actively viewing this chat
+            markMessagesAsSeen(selectedUser.id);
+        });
+
+        socket.on('messagesSeen', ({ byUserId }) => {
+            if (selectedUser.id === byUserId) {
+                set({
+                    messages: get().messages.map(msg => ({ ...msg, isRead: msg.isRead || true }))
+                });
+            }
         });
     },
 
     unsubscribeFromMessages: () => {
         const socket = useSocketStore.getState().socket;
         socket.off('newMessage');
+        socket.off('messagesSeen');
+    },
+
+    markMessagesAsSeen: async (senderId) => {
+        try {
+            await api.put(`/messages/seen/${senderId}`);
+            // Optimistically update our local UI so they appear unread-cleared
+            set({
+                messages: get().messages.map(msg => 
+                    msg.senderId === senderId ? { ...msg, isRead: true } : msg
+                )
+            });
+        } catch (error) {
+            console.error('Failed to mark messages as seen:', error);
+        }
     },
 
     sendFriendRequest: async (userId) => {

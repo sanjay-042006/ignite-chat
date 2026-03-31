@@ -16,6 +16,11 @@ export const usePracticeStore = create((set, get) => ({
         set({ status: 'waiting', partnerId: null, partnerUsername: null, roomId: null, messages: [] });
         // Tell server we want to match for practice
         socket.emit('joinPracticeQueue');
+    },
+
+    setupPracticeListeners: () => {
+        const socket = useSocketStore.getState().socket;
+        if (!socket) return;
 
         socket.off('practiceQueueStatus');
         socket.off('practiceMatch');

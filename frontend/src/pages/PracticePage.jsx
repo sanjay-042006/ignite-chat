@@ -7,13 +7,21 @@ import { useChatStore } from '../context/useChatStore';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 
+import { useSocketStore } from '../context/useSocketStore';
+
 const PracticePage = () => {
     const { status, messages, joinPracticeQueue, leavePracticeQueue, sendMessage, nextMatch, partnerUsername, partnerId } = usePracticeStore();
     const { authUser } = useAuthStore();
-    const { sendFriendRequest } = useChatStore();
+    const { sendFriendRequest, users, getUsers } = useChatStore();
+    const { onlineUsers, socket } = useSocketStore();
     const [text, setText] = useState('');
+    const [showInviteModal, setShowInviteModal] = useState(false);
     const messageEndRef = useRef(null);
     const navigate = useNavigate();
+
+    useEffect(() => {
+        getUsers();
+    }, [getUsers]);
 
     useEffect(() => {
         if (messageEndRef.current && messages) messageEndRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -75,12 +83,70 @@ const PracticePage = () => {
                         <h2 className="text-3xl md:text-2xl font-extrabold tracking-tight bg-gradient-to-r from-sky-300 to-blue-300 bg-clip-text text-transparent">English Practice</h2>
                         <p className="text-base md:text-sm text-muted-foreground mt-2">Improve your English with real conversations. AI monitors your grammar and provides instant corrections as you chat with a practice partner.</p>
                     </div>
-                    <button onClick={joinPracticeQueue}
-                        className="w-full py-4 md:py-3 rounded-xl bg-gradient-to-r from-sky-600 to-blue-600 text-white text-base md:text-sm font-bold shadow-lg shadow-sky-500/20 hover:shadow-sky-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all">
-                        <BookOpen className="size-4 inline mr-1.5 -mt-0.5" />
-                        Start Practicing
-                    </button>
+                    <div className="space-y-3">
+                        <button onClick={joinPracticeQueue}
+                            className="w-full py-4 md:py-3 rounded-xl bg-gradient-to-r from-sky-600 to-blue-600 text-white text-base md:text-sm font-bold shadow-lg shadow-sky-500/20 hover:shadow-sky-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all">
+                            <BookOpen className="size-4 inline mr-1.5 -mt-0.5" />
+                            Start Practicing
+                        </button>
+                        <button onClick={() => setShowInviteModal(true)}
+                            className="w-full py-3.5 md:py-2.5 rounded-xl border border-sky-500/20 bg-sky-500/5 text-sky-400 text-sm font-semibold hover:bg-sky-500/10 transition-all flex items-center justify-center gap-2">
+                            <UserPlus className="size-4" />
+                            Invite Friend
+                        </button>
+                    </div>
                 </div>
+
+                {/* Invite Friend Modal */}
+                {showInviteModal && (
+                    <div className="absolute inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+                        <div className="w-full sm:max-w-md bg-zinc-950 border border-white/10 rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl animate-in slide-in-from-bottom-5 sm:slide-in-from-bottom-0 sm:zoom-in-95">
+                            <div className="flex items-center justify-between mb-6">
+                                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                                    <UserPlus className="size-5 text-sky-400" /> Invite Friend
+                                </h3>
+                                <button onClick={() => setShowInviteModal(false)} className="p-2 hover:bg-white/5 rounded-full text-muted-foreground transition">
+                                    <XCircle className="size-5" />
+                                </button>
+                            </div>
+                            
+                            <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1 custom-scrollbar">
+                                {users.filter(u => u.friendshipStatus === 'FRIEND' && onlineUsers.includes(u.id)).length === 0 ? (
+                                    <div className="text-center py-8 text-muted-foreground/60">
+                                        <p className="text-sm">No friends online right now.</p>
+                                    </div>
+                                ) : (
+                                    users.filter(u => u.friendshipStatus === 'FRIEND' && onlineUsers.includes(u.id)).map(friend => (
+                                        <div key={friend.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-white/5 transition border border-transparent hover:border-white/5 group">
+                                            <div className="flex items-center gap-3">
+                                                <div className="relative">
+                                                    <div className="size-10 rounded-full bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center text-white font-bold max-w-full overflow-hidden shrink-0">
+                                                        {friend.username.charAt(0).toUpperCase()}
+                                                    </div>
+                                                    <span className="absolute -bottom-0.5 -right-0.5 size-3 border-2 border-zinc-950 bg-emerald-500 rounded-full" />
+                                                </div>
+                                                <div>
+                                                    <p className="font-semibold text-sm text-white">{friend.username}</p>
+                                                    <p className="text-[11px] text-emerald-400/80 font-medium">Online</p>
+                                                </div>
+                                            </div>
+                                            <button 
+                                                onClick={() => {
+                                                    socket?.emit('inviteFriendToPractice', { friendId: friend.id });
+                                                    toast.success(`Invite sent to ${friend.username}!`);
+                                                    setShowInviteModal(false);
+                                                }}
+                                                className="px-4 py-1.5 rounded-lg bg-sky-500/10 text-sky-400 hover:bg-sky-500 hover:text-white text-xs font-bold transition-all shadow-sm group-hover:shadow-sky-500/20"
+                                            >
+                                                Invite
+                                            </button>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         );
     }

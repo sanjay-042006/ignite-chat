@@ -46,6 +46,39 @@ export const handlePracticeSockets = (socket, io) => {
         }
     });
 
+    socket.on('inviteFriendToPractice', ({ friendId }) => {
+        const user = socket.user;
+        const friendSockets = getReceiverSocketId(friendId);
+        friendSockets.forEach(socketId => {
+            io.to(socketId).emit('receivePracticeInvite', {
+                inviterId: user.id,
+                inviterUsername: user.username
+            });
+        });
+    });
+
+    socket.on('acceptPracticeInvite', ({ inviterId, inviterUsername }) => {
+        const user = socket.user;
+        
+        // Remove both from queue if they are in it
+        const idx1 = practiceQueue.findIndex(u => u.id === user.id);
+        if (idx1 !== -1) practiceQueue.splice(idx1, 1);
+        const idx2 = practiceQueue.findIndex(u => u.id === inviterId);
+        if (idx2 !== -1) practiceQueue.splice(idx2, 1);
+
+        const roomId = `practice_${inviterId}_${user.id}`;
+        
+        // Notify Acceptor (current socket)
+        socket.join(roomId);
+        socket.emit('practiceMatch', { roomId, partnerId: inviterId, partnerUsername: inviterUsername });
+        
+        // Notify Inviter
+        const inviterSockets = getReceiverSocketId(inviterId);
+        inviterSockets.forEach(socketId => {
+            io.to(socketId).emit('practiceMatchDirect', { targetUserId: inviterId, roomId, partnerId: user.id, partnerUsername: user.username });
+        });
+    });
+
     socket.on('disconnect', () => {
         const index = practiceQueue.findIndex(u => u.id === socket.user?.id);
         if (index !== -1) {

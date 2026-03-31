@@ -11,6 +11,7 @@ import {
     initiateBreakup,
     acceptBreakup,
     cancelBreakup,
+    markLoveMessagesAsSeen,
 } from '../controllers/love.controller.js';
 
 const router = express.Router();
@@ -25,5 +26,6 @@ router.post('/:connectionId/ai-chat', protectRoute, triggerAIChat);
 router.post('/:connectionId/breakup', protectRoute, initiateBreakup);
 router.post('/:connectionId/breakup/accept', protectRoute, acceptBreakup);
 router.post('/:connectionId/breakup/cancel', protectRoute, cancelBreakup);
+router.put('/:connectionId/seen', protectRoute, markLoveMessagesAsSeen);
 
 export default router;

@@ -19,6 +19,9 @@ const LoveChatContainer = () => {
     const [text, setText] = useState('');
     const messageEndRef = useRef(null);
 
+    // Find the last read message sent by me
+    const lastReadMessageId = [...messages].reverse().find(m => m.senderId === authUser.id && m.isRead)?.id;
+
     const partner = selectedConnection?.partner;
     const isBreakingUp = selectedConnection?.status === 'BREAKING_UP';
     const iInitiated = selectedConnection?.breakupInitiatedBy === authUser.id;
@@ -174,39 +177,48 @@ const LoveChatContainer = () => {
                     const isMine = message.senderId === authUser.id;
                     const senderName = message.sender?.username || '?';
                     return (
-                        <div key={message.id} className={clsx("flex w-full gap-2", isMine ? "justify-end" : "justify-start")}>
-                            {!isMine && (
-                                <div className={clsx(
-                                    "size-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold mt-auto shrink-0",
-                                    message.isAI ? "bg-gradient-to-br from-purple-500 to-pink-500 shadow-sm shadow-purple-500/30" : "bg-gradient-to-br from-pink-500 to-rose-600"
-                                )}>
-                                    {message.isAI ? '✨' : senderName.charAt(0).toUpperCase()}
-                                </div>
-                            )}
-                            <div className={clsx(
-                                "max-w-[75%] rounded-2xl px-3.5 py-2.5 shadow-sm relative",
-                                isMine
-                                    ? message.isAI
-                                        ? "bg-gradient-to-br from-purple-600/90 to-pink-600/90 text-white rounded-br-sm"
-                                        : "bg-gradient-to-br from-pink-600/90 to-rose-600/90 text-white rounded-br-sm"
-                                    : message.isAI
-                                        ? "bg-purple-500/10 border border-purple-500/15 text-card-foreground rounded-bl-sm"
-                                        : "bg-white/5 border border-white/5 text-card-foreground rounded-bl-sm"
-                            )}>
-                                {message.isAI && (
-                                    <div className="flex items-center gap-1 mb-0.5">
-                                        <Sparkles className={clsx("size-2.5", isMine ? "text-purple-200/80" : "text-purple-400/60")} />
-                                        <span className={clsx("text-[9px] font-semibold", isMine ? "text-purple-200/80" : "text-purple-400/60")}>
-                                            AI · {senderName}
-                                        </span>
+                        <div key={message.id} className="flex flex-col w-full">
+                            <div className={clsx("flex w-full gap-2", isMine ? "justify-end" : "justify-start")}>
+                                {!isMine && (
+                                    <div className={clsx(
+                                        "size-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold mt-auto shrink-0",
+                                        message.isAI ? "bg-gradient-to-br from-purple-500 to-pink-500 shadow-sm shadow-purple-500/30" : "bg-gradient-to-br from-pink-500 to-rose-600"
+                                    )}>
+                                        {message.isAI ? '✨' : senderName.charAt(0).toUpperCase()}
                                     </div>
                                 )}
-                                <MediaAttachment message={message} />
-                                {message.content && <p className="text-[13px] leading-relaxed break-words">{message.content}</p>}
-                                <p className={clsx("text-[9px] mt-1 text-right", isMine ? "text-white/40" : "text-muted-foreground/40")}>
-                                    {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                </p>
+                                <div className={clsx(
+                                    "max-w-[75%] rounded-2xl px-3.5 py-2.5 shadow-sm relative",
+                                    isMine
+                                        ? message.isAI
+                                            ? "bg-gradient-to-br from-purple-600/90 to-pink-600/90 text-white rounded-br-sm"
+                                            : "bg-gradient-to-br from-pink-600/90 to-rose-600/90 text-white rounded-br-sm"
+                                        : message.isAI
+                                            ? "bg-purple-500/10 border border-purple-500/15 text-card-foreground rounded-bl-sm"
+                                            : "bg-white/5 border border-white/5 text-card-foreground rounded-bl-sm"
+                                )}>
+                                    {message.isAI && (
+                                        <div className="flex items-center gap-1 mb-0.5">
+                                            <Sparkles className={clsx("size-2.5", isMine ? "text-purple-200/80" : "text-purple-400/60")} />
+                                            <span className={clsx("text-[9px] font-semibold", isMine ? "text-purple-200/80" : "text-purple-400/60")}>
+                                                AI · {senderName}
+                                            </span>
+                                        </div>
+                                    )}
+                                    <MediaAttachment message={message} />
+                                    {message.content && <p className="text-[13px] leading-relaxed break-words">{message.content}</p>}
+                                    <p className={clsx("text-[9px] mt-1 text-right", isMine ? "text-white/40" : "text-muted-foreground/40")}>
+                                        {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    </p>
+                                </div>
                             </div>
+                            {isMine && message.id === lastReadMessageId && !message.isAI && (
+                                <div className="flex justify-end pr-1 mt-0.5 animate-in fade-in slide-in-from-top-1">
+                                    <span className="text-[10px] text-pink-300/60 flex items-center gap-1">
+                                        <ArrowLeft className="size-2.5 rotate-180" /> Seen
+                                    </span>
+                                </div>
+                            )}
                         </div>
                     );
                 })}

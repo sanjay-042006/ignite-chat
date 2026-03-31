@@ -420,3 +420,27 @@ export const triggerAIChat = async (req, res) => {
         res.status(500).json({ error: 'Server error' });
     }
 };
+
+export const markLoveMessagesAsSeen = async (req, res) => {
+    try {
+        const { connectionId } = req.params;
+        const myId = req.user.id;
+
+        await prisma.loveMessage.updateMany({
+            where: {
+                connectionId: connectionId,
+                senderId: { not: myId },
+                isRead: false
+            },
+            data: { isRead: true }
+        });
+
+        const roomName = `love_${connectionId}`;
+        io.to(roomName).emit('loveMessagesSeen', { connectionId, byUserId: myId });
+
+        res.status(200).json({ success: true });
+    } catch (error) {
+        console.error('markLoveMessagesAsSeen:', error.message);
+        res.status(500).json({ error: 'Server error' });
+    }
+};

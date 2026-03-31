@@ -19,6 +19,9 @@ const ChatContainer = () => {
     const [viewingPhoto, setViewingPhoto] = useState(null);
     const messageEndRef = useRef(null);
 
+    // Find the last read message sent by me
+    const lastReadMessageId = [...messages].reverse().find(m => m.senderId === authUser.id && m.isRead)?.id;
+
     useEffect(() => {
         getMessages(selectedUser.id);
         subscribeToMessages();
@@ -140,6 +143,13 @@ const ChatContainer = () => {
                                     </p>
                                 </div>
                             </div>
+                            {isMine && message.id === lastReadMessageId && (
+                                <div className="flex justify-end pr-1 mt-0.5 animate-in fade-in slide-in-from-top-1">
+                                    <span className="text-[10px] text-muted-foreground/60 flex items-center gap-1">
+                                        <ArrowLeft className="size-2.5 rotate-180" /> Seen
+                                    </span>
+                                </div>
+                            )}
                         </SwipeableMessage>
                     );
                 })}

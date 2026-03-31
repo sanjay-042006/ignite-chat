@@ -1,7 +1,7 @@
 import express from 'express';
 import { protectRoute } from '../middlewares/auth.js';
 import { upload } from '../middlewares/upload.js';
-import { getMessages, getUsersForSidebar, sendMessage } from '../controllers/message.controller.js';
+import { getMessages, getUsersForSidebar, sendMessage, markMessagesAsSeen } from '../controllers/message.controller.js';
 
 const router = express.Router();
 
@@ -15,5 +15,6 @@ router.post('/upload', protectRoute, upload.single('media'), (req, res) => {
 });
 
 router.post('/send/:id', protectRoute, sendMessage);
+router.put('/seen/:senderId', protectRoute, markMessagesAsSeen);
 
 export default router;

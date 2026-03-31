@@ -66,6 +66,7 @@ export const useLoveStore = create((set, get) => ({
         try {
             const res = await api.get(`/love/${connectionId}/messages`);
             set({ messages: res.data });
+            get().markLoveMessagesAsSeen(connectionId);
         } catch (error) {
             console.error(error);
         } finally {
@@ -149,6 +150,24 @@ export const useLoveStore = create((set, get) => ({
                 set((state) => ({
                     messages: [...state.messages, newMessage]
                 }));
+                // Only mark as read if the message is from the partner
+                const authUserId = useAuthStore.getState().authUser?.id;
+                if (newMessage.senderId !== authUserId) {
+                    get().markLoveMessagesAsSeen(newMessage.connectionId);
+                }
+            }
+        });
+
+        socket.on('loveMessagesSeen', ({ connectionId, byUserId }) => {
+            const currentSelected = get().selectedConnection;
+            if (currentSelected && currentSelected.id === connectionId) {
+                // If partner saw the messages, update our local store
+                const authUserId = useAuthStore.getState().authUser?.id;
+                if (byUserId !== authUserId) {
+                    set({
+                        messages: get().messages.map(msg => ({ ...msg, isRead: msg.isRead || true }))
+                    });
+                }
             }
         });
 
@@ -222,6 +241,22 @@ export const useLoveStore = create((set, get) => ({
             socket.off('breakupInitiated');
             socket.off('breakupCancelled');
             socket.off('breakupCompleted');
+            socket.off('loveMessagesSeen');
+        }
+    },
+
+    markLoveMessagesAsSeen: async (connectionId) => {
+        try {
+            await api.put(`/love/${connectionId}/seen`);
+            // Optimistically update
+            const authUserId = useAuthStore.getState().authUser?.id;
+            set({
+                messages: get().messages.map(msg => 
+                    msg.senderId !== authUserId ? { ...msg, isRead: true } : msg
+                )
+            });
+        } catch (error) {
+            console.error('Failed to mark love messages as seen:', error);
         }
     },
 }));

@@ -156,3 +156,33 @@ export const sendMessage = async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 };
+
+export const markMessagesAsSeen = async (req, res) => {
+    try {
+        const { senderId } = req.params;
+        const myId = req.user.id;
+
+        await prisma.message.updateMany({
+            where: {
+                senderId: senderId,
+                receiverId: myId,
+                roomType: 'DIRECT',
+                isRead: false
+            },
+            data: { isRead: true }
+        });
+
+        // Emit to sender that their messages were seen
+        const senderSocketIds = getReceiverSocketId(senderId);
+        if (senderSocketIds?.length > 0) {
+            senderSocketIds.forEach(sid => {
+                io.to(sid).emit('messagesSeen', { byUserId: myId });
+            });
+        }
+
+        res.status(200).json({ success: true });
+    } catch (error) {
+        console.error('Error in markMessagesAsSeen: ', error.message);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
