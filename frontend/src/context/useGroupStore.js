@@ -98,6 +98,39 @@ export const useGroupStore = create((set, get) => ({
                 selectedGroup: state.selectedGroup?.id === groupId ? { ...state.selectedGroup, profilePic } : state.selectedGroup
             }));
         });
+
+        socket.on('groupMembersAdded', ({ groupId, members }) => {
+            set((state) => {
+                const groupFilter = g => g.id === groupId;
+                const updateGroup = g => ({ ...g, members: [...(g.members || []), ...members] });
+
+                return {
+                    groups: state.groups.map(g => groupFilter(g) ? updateGroup(g) : g),
+                    selectedGroup: state.selectedGroup?.id === groupId ? updateGroup(state.selectedGroup) : state.selectedGroup
+                };
+            });
+        });
+
+        socket.on('groupMemberRemoved', ({ groupId, userId }) => {
+            set((state) => {
+                const groupFilter = g => g.id === groupId;
+                const updateGroup = g => ({ ...g, members: (g.members || []).filter(m => m.userId !== userId) });
+
+                // If WE are the ones who were removed:
+                const myId = useAuthStore.getState().authUser?.id;
+                if (userId === myId && state.selectedGroup?.id === groupId) {
+                    return {
+                        groups: state.groups.filter(g => g.id !== groupId),
+                        selectedGroup: null,
+                    };
+                }
+
+                return {
+                    groups: state.groups.map(g => groupFilter(g) ? updateGroup(g) : g),
+                    selectedGroup: state.selectedGroup?.id === groupId ? updateGroup(state.selectedGroup) : state.selectedGroup
+                };
+            });
+        });
     },
 
     unsubscribeFromGroupMessages: () => {
@@ -106,6 +139,8 @@ export const useGroupStore = create((set, get) => ({
             socket.off('newGroupMessage');
             socket.off('anonymousModeToggled');
             socket.off('groupProfileUpdated');
+            socket.off('groupMembersAdded');
+            socket.off('groupMemberRemoved');
         }
     },
 
@@ -152,4 +187,26 @@ export const useGroupStore = create((set, get) => ({
             return false;
         }
     },
+
+    addGroupMembers: async (groupId, memberIds) => {
+        try {
+            await api.post(`/groups/${groupId}/members`, { memberIds });
+            // Let the socket listener handle the state update
+            return true;
+        } catch (error) {
+            console.error(error);
+            return false;
+        }
+    },
+
+    removeGroupMember: async (groupId, userId) => {
+        try {
+            await api.delete(`/groups/${groupId}/members/${userId}`);
+            // Let the socket listener handle the state update
+            return true;
+        } catch (error) {
+            console.error(error);
+            return false;
+        }
+    }
 }));

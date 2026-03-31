@@ -337,3 +337,45 @@ export const createFriendStory = async (req, res) => {
         res.status(500).json({ error: "Internal Server Error" });
     }
 };
+
+export const deleteStoryGroup = async (req, res) => {
+    try {
+        const { id } = req.params; // groupId
+        const userId = req.user.id;
+
+        // Fetch group with members
+        const group = await prisma.storyGroup.findUnique({
+            where: { id },
+            include: {
+                members: { orderBy: { joinedAt: 'asc' } }
+            }
+        });
+
+        if (!group) {
+            return res.status(404).json({ error: "Story group not found" });
+        }
+
+        // The creator is the first member who joined
+        const creator = group.members[0];
+        if (!creator || creator.userId !== userId) {
+            return res.status(403).json({ error: "Only the group creator can delete this story" });
+        }
+
+        // Cascade delete all associated entities
+        await prisma.storyEntry.deleteMany({ where: { groupId: id } });
+        await prisma.storyResult.deleteMany({ where: { groupId: id } });
+        await prisma.globalStoryResult.deleteMany({ where: { storyGroupId: id } });
+        await prisma.storyGroupMember.deleteMany({ where: { groupId: id } });
+        
+        // Finally, delete the group itself
+        await prisma.storyGroup.delete({ where: { id } });
+
+        // Notify socket listeners so active participants get booted from UI
+        io.to(`story_${id}`).emit('storyGroupDeleted', { groupId: id });
+
+        res.status(200).json({ message: "Story group successfully deleted" });
+    } catch (error) {
+        console.error("Error in deleteStoryGroup", error.message);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+};

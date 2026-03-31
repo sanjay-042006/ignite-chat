@@ -6,7 +6,8 @@ import {
     getStoryDetails,
     getMyActiveStory,
     contributeToStory,
-    createFriendStory
+    createFriendStory,
+    deleteStoryGroup
 } from '../controllers/story.controller.js';
 
 const router = express.Router();
@@ -28,5 +29,8 @@ router.get('/me/active', protectRoute, getMyActiveStory);
 router.post('/friends', protectRoute, createFriendStory);
 
 router.post('/:id/contribute', protectRoute, contributeToStory);
+
+// Delete story group (Creator only)
+router.delete('/group/:id', protectRoute, deleteStoryGroup);
 
 export default router;

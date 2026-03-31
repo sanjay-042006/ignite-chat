@@ -2,18 +2,22 @@ import { useEffect, useRef, useState } from 'react';
 import { useGroupStore } from '../context/useGroupStore';
 import { useAuthStore } from '../context/useAuthStore';
 import { useSocketStore } from '../context/useSocketStore';
-import { Loader2, Send, Users, LogOut, Trash2, ChevronDown, ChevronUp, Crown, Camera, ArrowLeft } from 'lucide-react';
+import { useChatStore } from '../context/useChatStore';
+import { Loader2, Send, Users, LogOut, Trash2, ChevronDown, ChevronUp, Crown, Camera, ArrowLeft, UserPlus, UserMinus, X } from 'lucide-react';
 import MessageInput from './chat/MessageInput';
 import { MediaAttachment } from './chat/MediaAttachment';
 import { resolveUrl } from '../lib/utils';
 import clsx from 'clsx';
 
 const GroupChatContainer = () => {
-    const { groupMessages, getGroupMessages, isGroupMessagesLoading, selectedGroup, subscribeToGroupMessages, unsubscribeFromGroupMessages, sendGroupMessage, leaveGroup, deleteGroup, updateGroupProfilePic, setSelectedGroup } = useGroupStore();
+    const { groupMessages, getGroupMessages, isGroupMessagesLoading, selectedGroup, subscribeToGroupMessages, unsubscribeFromGroupMessages, sendGroupMessage, leaveGroup, deleteGroup, updateGroupProfilePic, setSelectedGroup, addGroupMembers, removeGroupMember } = useGroupStore();
     const { authUser } = useAuthStore();
     const { onlineUsers } = useSocketStore();
+    const { users, getUsers } = useChatStore();
     const [text, setText] = useState('');
     const [showMembers, setShowMembers] = useState(false);
+    const [showAddMembers, setShowAddMembers] = useState(false);
+    const [selectedNewMembers, setSelectedNewMembers] = useState([]);
     const messageEndRef = useRef(null);
 
     const myMembership = selectedGroup?.members?.find(m => m.userId === authUser.id);
@@ -28,7 +32,9 @@ const GroupChatContainer = () => {
         if (messageEndRef.current && groupMessages) messageEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }, [groupMessages]);
 
-
+    useEffect(() => {
+        if (isAdmin && showMembers && users.length === 0) getUsers();
+    }, [isAdmin, showMembers, users.length, getUsers]);
 
     if (isGroupMessagesLoading) return (
         <div className="flex-1 flex items-center justify-center h-full">
@@ -101,28 +107,73 @@ const GroupChatContainer = () => {
                 {/* Members Panel */}
                 {showMembers && (
                     <div className="mt-2 pt-2 border-t border-white/5 animate-slide-up">
-                        <p className="text-[9px] font-bold uppercase text-muted-foreground/40 tracking-widest mb-1.5 ml-0.5">Members</p>
-                        <div className="space-y-0.5 max-h-36 overflow-y-auto">
-                            {selectedGroup.members?.map((member) => (
-                                <div key={member.id} className="flex items-center gap-2.5 p-1.5 rounded-lg hover:bg-white/[0.03] transition">
-                                    <div className="relative shrink-0">
-                                        {member.user?.profilePic ? (
-                                            <img src={resolveUrl(member.user.profilePic)} alt={member.user.username} className="size-6 rounded-full object-cover border border-white/10" />
-                                        ) : (
-                                            <div className="size-6 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white text-[9px] font-bold">
-                                                {member.user?.username?.charAt(0).toUpperCase() || '?'}
-                                            </div>
-                                        )}
-                                        <span className={clsx("absolute -bottom-0.5 -right-0.5 size-2 border border-background rounded-full",
-                                            onlineUsers.includes(member.userId) ? "bg-emerald-400" : "bg-zinc-600"
-                                        )} />
-                                    </div>
-                                    <span className="text-[11px] font-medium truncate">{member.user?.username || 'Unknown'}</span>
-                                    {member.isAdmin && <Crown className="size-3 text-amber-400 shrink-0" />}
-                                    {member.userId === authUser.id && <span className="text-[9px] text-muted-foreground/40">(you)</span>}
-                                </div>
-                            ))}
+                        <div className="flex items-center justify-between mb-1.5 px-0.5">
+                            <p className="text-[9px] font-bold uppercase text-muted-foreground/40 tracking-widest">Members</p>
+                            {isAdmin && (
+                                <button onClick={() => setShowAddMembers(!showAddMembers)} className="flex items-center gap-1 bg-violet-500/10 hover:bg-violet-500/20 text-violet-400 text-[10px] font-bold py-1 px-2 rounded transition">
+                                    {showAddMembers ? <X className="size-3" /> : <UserPlus className="size-3" />}
+                                    {showAddMembers ? 'Cancel' : 'Add'}
+                                </button>
+                            )}
                         </div>
+
+                        {showAddMembers ? (
+                            <div className="space-y-2 mb-2 animate-slide-up">
+                                <div className="max-h-32 overflow-y-auto space-y-0.5 p-1 border border-white/5 bg-black/10 rounded-xl">
+                                    {users.filter(u => u.friendshipStatus === 'FRIEND' && !selectedGroup.members?.some(m => m.userId === u.id)).length === 0 && (
+                                        <p className="text-[10px] text-muted-foreground/50 text-center py-2">No new friends to add</p>
+                                    )}
+                                    {users.filter(u => u.friendshipStatus === 'FRIEND' && !selectedGroup.members?.some(m => m.userId === u.id)).map(user => (
+                                        <div key={user.id} onClick={() => setSelectedNewMembers(prev => prev.includes(user.id) ? prev.filter(id => id !== user.id) : [...prev, user.id])}
+                                            className={clsx("flex items-center gap-2 p-1.5 rounded-lg cursor-pointer transition text-[11px]",
+                                                selectedNewMembers.includes(user.id) ? "bg-violet-500/15 border border-violet-500/20" : "hover:bg-white/[0.04] border border-transparent"
+                                            )}>
+                                            <span className="font-medium shrink-0">{user.username}</span>
+                                            {selectedNewMembers.includes(user.id) && <div className="ml-auto size-2 bg-violet-400 rounded-full" />}
+                                        </div>
+                                    ))}
+                                </div>
+                                <button disabled={selectedNewMembers.length === 0} 
+                                    onClick={async () => {
+                                        const success = await addGroupMembers(selectedGroup.id, selectedNewMembers);
+                                        if (success) { setShowAddMembers(false); setSelectedNewMembers([]); }
+                                    }}
+                                    className="w-full bg-violet-500 hover:bg-violet-600 disabled:opacity-50 text-white text-[10px] font-bold py-1.5 rounded-lg transition shadow-sm"
+                                >
+                                    Confirm Add
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="space-y-0.5 max-h-36 overflow-y-auto">
+                                {selectedGroup.members?.map((member) => (
+                                    <div key={member.id} className="flex items-center gap-2.5 p-1.5 rounded-lg hover:bg-white/[0.03] transition group/member">
+                                        <div className="relative shrink-0">
+                                            {member.user?.profilePic ? (
+                                                <img src={resolveUrl(member.user.profilePic)} alt={member.user.username} className="size-6 rounded-full object-cover border border-white/10" />
+                                            ) : (
+                                                <div className="size-6 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white text-[9px] font-bold">
+                                                    {member.user?.username?.charAt(0).toUpperCase() || '?'}
+                                                </div>
+                                            )}
+                                            <span className={clsx("absolute -bottom-0.5 -right-0.5 size-2 border border-background rounded-full",
+                                                onlineUsers.includes(member.userId) ? "bg-emerald-400" : "bg-zinc-600"
+                                            )} />
+                                        </div>
+                                        <span className="text-[11px] font-medium truncate flex-1">{member.user?.username || 'Unknown'}</span>
+                                        {member.isAdmin && <Crown className="size-3 text-amber-400 shrink-0" />}
+                                        {member.userId === authUser.id && <span className="text-[9px] text-muted-foreground/40 shrink-0">(you)</span>}
+                                        {isAdmin && member.userId !== authUser.id && (
+                                            <button title="Remove Member" onClick={(e) => {
+                                                e.stopPropagation();
+                                                if (confirm(`Remove ${member.user?.username}?`)) removeGroupMember(selectedGroup.id, member.userId);
+                                            }} className="hidden group-hover/member:block p-1 rounded hover:bg-red-500/20 text-muted-foreground/50 hover:text-red-400 transition ml-auto">
+                                                <UserMinus className="size-3" />
+                                            </button>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 )}
             </div>

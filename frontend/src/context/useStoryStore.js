@@ -171,6 +171,20 @@ export const useStoryStore = create((set, get) => ({
                 get().fetchStoryDetails(result.groupId);
             }
         });
+
+        socket.on('storyGroupDeleted', ({ groupId }) => {
+            const { activeStory, focusedStory } = get();
+            if (activeStory && activeStory.id === groupId) {
+                set({ activeStory: null, status: 'idle' });
+                toast.error("The story group was deleted by the creator.");
+            }
+            if (focusedStory && focusedStory.id === groupId) {
+                set({ focusedStory: null }); // Trigger UI to back out
+                toast.error("This story was permanently deleted.");
+            }
+            // Background update
+            get().fetchLibrary();
+        });
     },
 
     unsubscribeFromStoryUpdates: () => {
@@ -179,6 +193,7 @@ export const useStoryStore = create((set, get) => ({
         socket.off('newStoryEntry');
         socket.off('story_completed');
         socket.off('story_group_winner_announced');
+        socket.off('storyGroupDeleted');
     },
 
     // Global listener setup (call once at app level)
@@ -217,6 +232,20 @@ export const useStoryStore = create((set, get) => ({
             const msg = error.response?.data?.error || 'Failed to create friends story';
             toast.error(msg);
             throw error;
+        }
+    },
+
+    deleteStoryGroup: async (groupId) => {
+        try {
+            await api.delete(`/story/group/${groupId}`);
+            toast.success("Story permanently deleted.");
+            get().fetchLibrary();
+            return true;
+        } catch (error) {
+            console.error("Failed to delete story group", error);
+            const msg = error.response?.data?.error || "Failed to delete story";
+            toast.error(msg);
+            return false;
         }
     }
 }));

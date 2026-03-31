@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStoryStore } from '../context/useStoryStore';
 import { useAuthStore } from '../context/useAuthStore';
-import { Loader2, ArrowLeft, Trophy, BookOpen, Clock, CalendarDays, User, Send, Timer, Users, PenLine, UserPlus } from 'lucide-react';
+import { Loader2, ArrowLeft, Trophy, BookOpen, Clock, CalendarDays, User, Send, Timer, Users, PenLine, UserPlus, Trash2 } from 'lucide-react';
 import clsx from 'clsx';
 import { useChatStore } from '../context/useChatStore';
 import toast from 'react-hot-toast';
@@ -10,12 +10,23 @@ import toast from 'react-hot-toast';
 const StoryDetailPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { fetchStoryDetails, focusedStory, isFocusedLoading, activeStory, contribute, isContributing, getCurrentTurnUserId, getCurrentTurnUsername } = useStoryStore();
+    const { fetchStoryDetails, focusedStory, isFocusedLoading, activeStory, contribute, isContributing, getCurrentTurnUserId, getCurrentTurnUsername, deleteStoryGroup } = useStoryStore();
     const { authUser } = useAuthStore();
     const { sendFriendRequest } = useChatStore();
     const [text, setText] = useState('');
 
-    useEffect(() => { fetchStoryDetails(id); }, [id, fetchStoryDetails]);
+    useEffect(() => { 
+        if (id) fetchStoryDetails(id); 
+    }, [id, fetchStoryDetails]);
+
+    // Handle sudden deletion from websockets
+    useEffect(() => {
+        if (!isFocusedLoading && !focusedStory) {
+            // Because if it got deleted, `focusedStory` is set to null in Zustand hook.
+            const timeout = setTimeout(() => navigate('/library'), 100);
+            return () => clearTimeout(timeout);
+        }
+    }, [focusedStory, isFocusedLoading, navigate]);
 
     // Countdown timer for active stories
     const [timeLeft, setTimeLeft] = useState('');
@@ -80,6 +91,15 @@ const StoryDetailPage = () => {
     const members = isMyActiveStory ? activeStory.members : focusedStory.members;
     const entries = isMyActiveStory ? activeStory.entries : focusedStory.entries;
 
+    // Permissions
+    const isCreator = members && members.length > 0 && members[0].userId === authUser?.id;
+
+    const handleDelete = async () => {
+        if (!confirm("Are you sure you want to permanently delete this story group?")) return;
+        const success = await deleteStoryGroup(focusedStory.id);
+        if (success) navigate('/library');
+    };
+
     return (
         <div className="w-full h-full flex flex-col relative overflow-hidden pb-16 md:pb-0">
             <div className="absolute top-1/4 left-1/3 w-72 h-72 bg-fuchsia-500/[0.04] rounded-full blur-[100px] animate-glow-pulse" />
@@ -111,6 +131,15 @@ const StoryDetailPage = () => {
                     )}>
                         <Clock className="size-2.5" /> {focusedStory.status}
                     </span>
+                    {isCreator && (
+                        <button 
+                            onClick={handleDelete}
+                            className="ml-1 p-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 transition-colors shadow-sm"
+                            title="Delete Story Group"
+                        >
+                            <Trash2 className="size-3.5" />
+                        </button>
+                    )}
                 </div>
             </div>
 
