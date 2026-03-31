@@ -58,7 +58,7 @@ const PracticePage = () => {
             <div className="w-full h-full flex flex-col items-center justify-center p-8 relative overflow-hidden">
                 {/* Back Button */}
                 <button onClick={() => navigate('/')}
-                    className="absolute top-4 left-4 z-20 flex items-center gap-1.5 text-muted-foreground/70 hover:text-foreground text-xs font-medium transition px-2.5 py-1.5 rounded-lg hover:bg-white/5">
+                    className="md:hidden absolute top-4 left-4 z-20 flex items-center gap-1.5 text-muted-foreground/70 hover:text-foreground text-xs font-medium transition px-2.5 py-1.5 rounded-lg hover:bg-white/5">
                     <ArrowLeft className="size-4" /> Back
                 </button>
 
@@ -91,7 +91,7 @@ const PracticePage = () => {
             <div className="w-full h-full flex flex-col items-center justify-center p-8 relative overflow-hidden">
                 {/* Back Button */}
                 <button onClick={() => { leavePracticeQueue(); navigate('/'); }}
-                    className="absolute top-4 left-4 z-20 flex items-center gap-1.5 text-muted-foreground/70 hover:text-foreground text-xs font-medium transition px-2.5 py-1.5 rounded-lg hover:bg-white/5">
+                    className="md:hidden absolute top-4 left-4 z-20 flex items-center gap-1.5 text-muted-foreground/70 hover:text-foreground text-xs font-medium transition px-2.5 py-1.5 rounded-lg hover:bg-white/5">
                     <ArrowLeft className="size-4" /> Back
                 </button>
 
@@ -123,10 +123,10 @@ const PracticePage = () => {
                 <div className="flex items-center gap-3">
                     {/* Back Button */}
                     <button onClick={() => { leavePracticeQueue(); navigate('/'); }}
-                        className="size-8 rounded-lg bg-white/5 border border-white/5 flex items-center justify-center text-muted-foreground hover:text-foreground transition">
+                        className="md:hidden size-8 shrink-0 rounded-lg bg-white/5 border border-white/5 flex items-center justify-center text-muted-foreground hover:text-foreground transition">
                         <ArrowLeft className="size-4" />
                     </button>
-                    <div className="size-9 rounded-full bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center text-white font-bold text-[10px] shadow-md shadow-sky-500/20 ring-2 ring-sky-500/10">
+                    <div className="size-9 shrink-0 rounded-full bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center text-white font-bold text-[10px] shadow-md shadow-sky-500/20 ring-2 ring-sky-500/10">
                         {partnerUsername ? partnerUsername.substring(0,2).toUpperCase() : <BookOpen className="size-4" />}
                     </div>
                     <div>

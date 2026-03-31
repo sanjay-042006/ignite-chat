@@ -36,7 +36,7 @@ const StrangerPage = () => {
         return (
             <div className="w-full h-full flex flex-col items-center justify-center p-8 relative overflow-hidden">
                 <button onClick={() => navigate('/')}
-                    className="absolute top-4 left-4 z-20 flex items-center gap-1.5 text-muted-foreground/70 hover:text-foreground text-xs font-medium transition px-2.5 py-1.5 rounded-lg hover:bg-white/5">
+                    className="md:hidden absolute top-4 left-4 z-20 flex items-center gap-1.5 text-muted-foreground/70 hover:text-foreground text-xs font-medium transition px-2.5 py-1.5 rounded-lg hover:bg-white/5">
                     <ArrowLeft className="size-4" /> Back
                 </button>
 
@@ -67,7 +67,7 @@ const StrangerPage = () => {
         return (
             <div className="w-full h-full flex flex-col items-center justify-center p-8 relative overflow-hidden">
                 <button onClick={() => { leaveQueue(); navigate('/'); }}
-                    className="absolute top-4 left-4 z-20 flex items-center gap-1.5 text-muted-foreground/70 hover:text-foreground text-xs font-medium transition px-2.5 py-1.5 rounded-lg hover:bg-white/5">
+                    className="md:hidden absolute top-4 left-4 z-20 flex items-center gap-1.5 text-muted-foreground/70 hover:text-foreground text-xs font-medium transition px-2.5 py-1.5 rounded-lg hover:bg-white/5">
                     <ArrowLeft className="size-4" /> Back
                 </button>
 
@@ -98,10 +98,10 @@ const StrangerPage = () => {
             <div className="px-4 py-2.5 border-b border-white/5 flex items-center justify-between sticky top-0 z-10 backdrop-blur-xl" style={{ background: 'rgba(0,0,0,0.2)' }}>
                 <div className="flex items-center gap-3">
                     <button onClick={() => { leaveQueue(); navigate('/'); }}
-                        className="size-8 rounded-lg bg-white/5 border border-white/5 flex items-center justify-center text-muted-foreground hover:text-foreground transition">
+                        className="md:hidden size-8 shrink-0 rounded-lg bg-white/5 border border-white/5 flex items-center justify-center text-muted-foreground hover:text-foreground transition">
                         <ArrowLeft className="size-4" />
                     </button>
-                    <div className="size-9 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white font-bold text-[10px] shadow-md shadow-amber-500/20 ring-2 ring-amber-500/10">
+                    <div className="size-9 shrink-0 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white font-bold text-[10px] shadow-md shadow-amber-500/20 ring-2 ring-amber-500/10">
                         {displayAvatar}
                     </div>
                     <div>
