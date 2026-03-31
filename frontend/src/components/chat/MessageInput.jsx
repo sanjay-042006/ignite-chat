@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Send, Image as ImageIcon, Smile, X, Loader2, Reply, Search } from 'lucide-react';
 import { api } from '../../context/useAuthStore';
 import { Grid } from '@giphy/react-components';
@@ -22,6 +22,7 @@ const MessageInput = ({ onSendMessage, placeholder = "Type a message...", disabl
     const [activeTab, setActiveTab] = useState('emojis');
     const [gifSearch, setGifSearch] = useState('');
     const fileInputRef = useRef(null);
+    const inputRef = useRef(null); // Reference for contentEditable div
 
     const fetchGifs = (offset) => {
         if (gifSearch) return gf.search(gifSearch, { offset, limit: 10 });
@@ -72,12 +73,39 @@ const MessageInput = ({ onSendMessage, placeholder = "Type a message...", disabl
             if (onCancelReply) onCancelReply();
             
             setText('');
+            if (inputRef.current) inputRef.current.textContent = ''; // Reset div
             removeMedia();
         } catch (error) {
             console.error('Upload failed:', error);
         } finally {
             setIsUploading(false);
             setShowEmojis(false);
+        }
+    };
+
+    const handlePaste = (e) => {
+        const items = e.clipboardData?.items;
+        if (!items) return;
+        
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].type.indexOf('image') !== -1 || items[i].type.includes('gif')) {
+                e.preventDefault();
+                const file = items[i].getAsFile();
+                if (file) {
+                    setMediaFile(file);
+                    const reader = new FileReader();
+                    reader.onload = () => setMediaPreview({ url: reader.result, type: file.type.startsWith('video/') ? 'VIDEO' : (file.type.includes('gif') ? 'GIF' : 'IMAGE') });
+                    reader.readAsDataURL(file);
+                }
+                return; // Suppress text paste if it's an image
+            }
+        }
+    };
+
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSubmit(e);
         }
     };
 
@@ -116,7 +144,18 @@ const MessageInput = ({ onSendMessage, placeholder = "Type a message...", disabl
                         {activeTab === 'emojis' && (
                             <div className="flex flex-wrap gap-2">
                                 {EMOJIS.map(e => (
-                                    <button key={e} type="button" onClick={() => setText(prev => prev + e)} className="text-2xl hover:scale-125 transition-transform p-1">{e}</button>
+                                    <button 
+                                        key={e} 
+                                        type="button" 
+                                        onClick={() => {
+                                            const newText = text + e;
+                                            setText(newText);
+                                            if (inputRef.current) inputRef.current.textContent = newText;
+                                        }} 
+                                        className="text-2xl hover:scale-125 transition-transform p-1"
+                                    >
+                                        {e}
+                                    </button>
                                 ))}
                             </div>
                         )}
@@ -181,14 +220,23 @@ const MessageInput = ({ onSendMessage, placeholder = "Type a message...", disabl
                     <ImageIcon className="size-4" />
                     <input type="file" ref={fileInputRef} onChange={handleFileSelect} className="hidden" accept="image/*,video/*,.gif" />
                 </button>
-                <input
-                    type="text"
-                    placeholder={placeholder}
-                    className="flex-1 min-w-0 bg-white/5 border border-white/5 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500/40 focus:border-blue-500/20 transition placeholder:text-muted-foreground/30"
-                    value={text}
-                    onChange={(e) => setText(e.target.value)}
-                    disabled={disabled || isUploading}
-                />
+                <div className="relative flex-1 min-w-0 bg-white/5 border border-white/5 rounded-xl px-3 py-2 transition flex items-center">
+                    <div
+                        ref={inputRef}
+                        contentEditable={!disabled && !isUploading}
+                        suppressContentEditableWarning
+                        onInput={(e) => setText(e.currentTarget.textContent)}
+                        onKeyDown={handleKeyDown}
+                        onPaste={handlePaste}
+                        className="w-full text-sm text-foreground focus:outline-none max-h-32 overflow-y-auto custom-scrollbar"
+                        style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', outline: 'none' }}
+                    />
+                    {!text && (
+                        <span className="absolute left-3 text-sm text-muted-foreground/30 pointer-events-none select-none">
+                            {placeholder}
+                        </span>
+                    )}
+                </div>
                 <button
                     type="submit"
                     disabled={disabled || isUploading || (!text.trim() && !mediaFile)}

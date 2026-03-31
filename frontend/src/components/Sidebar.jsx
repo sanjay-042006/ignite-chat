@@ -33,9 +33,10 @@ const Sidebar = ({ className = '', isMobile = false }) => {
     // ── MOBILE BOTTOM TAB BAR ──────────────────────────────────────────────
     if (isMobile) {
         return (
-            <div className={`flex flex-col ${className}`}
-                style={{ background: 'rgba(5,7,14,0.97)', backdropFilter: 'blur(20px)' }}>
-                {/* Scrollable tab icons */}
+            <>
+                <div className={`flex flex-col ${className}`}
+                    style={{ background: 'rgba(5,7,14,0.97)', backdropFilter: 'blur(20px)' }}>
+                    {/* Scrollable tab icons */}
                 <div className="flex overflow-x-auto py-2 px-2 gap-1 w-full scrollbar-none">
                     {links.map((item) => (
                         <NavLink
@@ -88,8 +89,11 @@ const Sidebar = ({ className = '', isMobile = false }) => {
                     </button>
                 </div>
             </div>
-        );
-    }
+            {/* Profile Modal for Mobile */}
+            {showProfile && <ProfileModal onClose={() => setShowProfile(false)} />}
+        </>
+    );
+}
 
     // ── DESKTOP SIDEBAR ────────────────────────────────────────────────────
     return (
