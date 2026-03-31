@@ -36,14 +36,16 @@ export const usePracticeStore = create((set, get) => ({
             set({ status: data.state });
         });
 
-        socket.on('practiceMatch', ({ roomId, partnerId, partnerUsername }) => {
-            set({ status: 'matched', partnerId, partnerUsername, roomId });
+        socket.on('practiceMatch', async ({ roomId, partnerId, partnerUsername }) => {
+            set({ status: 'matched', partnerId, partnerUsername, roomId, messages: [] });
             socket.emit('joinPracticeRoom', roomId);
+            await get().getPracticeMessages(roomId);
         });
 
-        socket.on('practiceMatchDirect', ({ targetUserId, roomId, partnerId, partnerUsername }) => {
-            set({ status: 'matched', partnerId: partnerId || targetUserId, partnerUsername, roomId });
+        socket.on('practiceMatchDirect', async ({ targetUserId, roomId, partnerId, partnerUsername }) => {
+            set({ status: 'matched', partnerId: partnerId || targetUserId, partnerUsername, roomId, messages: [] });
             socket.emit('joinPracticeRoom', roomId);
+            await get().getPracticeMessages(roomId);
         });
 
         socket.on('newPracticeMessage', (msg) => {
@@ -83,6 +85,15 @@ export const usePracticeStore = create((set, get) => ({
             await api.post(`/practice/${roomId}/send`, { text, receiverId: partnerId });
         } catch (e) {
             console.error("Failed sending practice msg", e);
+        }
+    },
+
+    getPracticeMessages: async (roomId) => {
+        try {
+            const res = await api.get(`/practice/${roomId}/messages`);
+            set({ messages: res.data });
+        } catch (error) {
+            console.error("Failed fetching practice messages", error);
         }
     }
 }));

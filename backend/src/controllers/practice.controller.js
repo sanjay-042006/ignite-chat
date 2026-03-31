@@ -16,8 +16,9 @@ export const handlePracticeSockets = (socket, io) => {
             if (practiceQueue.length > 0) {
                 const matchedUser = practiceQueue.shift();
 
-                // Join both to a common room string "practice_${matchedUser.id}_${user.id}"
-                const roomId = `practice_${matchedUser.id}_${user.id}`;
+                // Join both to a common room string, canonically sorted so it acts as persistent DM history
+                const sortedIds = [matchedUser.id, user.id].sort();
+                const roomId = `practice_${sortedIds[0]}_${sortedIds[1]}`;
 
                 socket.join(roomId);
 
@@ -66,7 +67,8 @@ export const handlePracticeSockets = (socket, io) => {
         const idx2 = practiceQueue.findIndex(u => u.id === inviterId);
         if (idx2 !== -1) practiceQueue.splice(idx2, 1);
 
-        const roomId = `practice_${inviterId}_${user.id}`;
+        const sortedIds = [inviterId, user.id].sort();
+        const roomId = `practice_${sortedIds[0]}_${sortedIds[1]}`;
         
         // Notify Acceptor (current socket)
         socket.join(roomId);
