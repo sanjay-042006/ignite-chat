@@ -3,6 +3,8 @@ import { useAuthStore } from '../context/useAuthStore';
 import { LogOut, MessageSquare, Ghost, Users, Compass, BookOpen, Edit, Heart, Flame, Camera } from 'lucide-react';
 import { resolveUrl } from '../lib/utils';
 import clsx from 'clsx';
+import { useState } from 'react';
+import ProfileModal from './ProfileModal';
 
 const links = [
     { to: '/', icon: MessageSquare, label: 'Chat', color: 'from-blue-500 to-cyan-500' },
@@ -16,6 +18,7 @@ const links = [
 
 const Sidebar = ({ className = '', isMobile = false }) => {
     const { authUser, logout } = useAuthStore();
+    const [showProfile, setShowProfile] = useState(false);
 
     const handleImageUpload = async (e) => {
         const file = e.target.files[0];
@@ -59,7 +62,10 @@ const Sidebar = ({ className = '', isMobile = false }) => {
                         </NavLink>
                     ))}
                     {/* User Profile on mobile */}
-                    <label className="flex flex-col items-center justify-center gap-0.5 min-w-[56px] py-1.5 px-1 shrink-0 group cursor-pointer">
+                    <button 
+                        onClick={() => setShowProfile(true)} 
+                        className="flex flex-col items-center justify-center gap-0.5 min-w-[56px] py-1.5 px-1 shrink-0 group cursor-pointer"
+                    >
                         <div className="size-9 rounded-xl flex items-center justify-center overflow-hidden bg-gradient-to-br from-indigo-500 to-purple-500 text-white font-bold text-[10px] shadow-sm group-hover:ring-1 group-hover:ring-purple-400">
                             {authUser?.profilePic ? (
                                 <img src={resolveUrl(authUser.profilePic)} alt="Me" className="w-full h-full object-cover" />
@@ -68,8 +74,7 @@ const Sidebar = ({ className = '', isMobile = false }) => {
                             )}
                         </div>
                         <span className="text-[9px] font-semibold text-muted-foreground/60 mt-0.5 group-hover:text-white transition-colors">Profile</span>
-                        <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-                    </label>
+                    </button>
 
                     {/* Logout on mobile */}
                     <button
@@ -134,9 +139,12 @@ const Sidebar = ({ className = '', isMobile = false }) => {
             {/* User + Logout */}
             <div className="flex flex-col items-center w-full space-y-1 px-2">
                 {authUser && (
-                    <div className="hidden lg:flex flex-col gap-2 w-full px-2.5 py-3 rounded-xl bg-white/[0.03] border border-white/5">
+                    <button 
+                        onClick={() => setShowProfile(true)}
+                        className="hidden lg:flex flex-col gap-2 w-full px-2.5 py-3 rounded-xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] transition-colors text-left"
+                    >
                         <div className="flex items-center gap-2">
-                            <label className="relative cursor-pointer group shrink-0 block">
+                            <div className="relative group shrink-0 block">
                                 <div className="size-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white text-[11px] font-bold overflow-hidden border border-transparent group-hover:border-purple-400/50 transition-colors">
                                     {authUser.profilePic ? (
                                         <img src={resolveUrl(authUser.profilePic)} alt="Profile" className="w-full h-full object-cover" />
@@ -144,11 +152,7 @@ const Sidebar = ({ className = '', isMobile = false }) => {
                                         authUser.username?.charAt(0).toUpperCase()
                                     )}
                                 </div>
-                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-lg">
-                                    <Camera className="size-3 text-white" />
-                                </div>
-                                <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-                            </label>
+                            </div>
                             <span className="text-xs font-medium text-foreground/80 truncate">{authUser.username}</span>
                         </div>
                         
@@ -168,7 +172,7 @@ const Sidebar = ({ className = '', isMobile = false }) => {
                                 )}
                             </div>
                         )}
-                    </div>
+                    </button>
                 )}
                 <button onClick={logout}
                     className="p-2.5 w-full flex items-center justify-center lg:justify-start rounded-xl text-muted-foreground hover:bg-red-500/10 hover:text-red-400 transition-all"
@@ -177,6 +181,9 @@ const Sidebar = ({ className = '', isMobile = false }) => {
                     <span className="hidden lg:block ml-2.5 text-[13px] font-medium">Logout</span>
                 </button>
             </div>
+
+            {/* Profile Modal */}
+            {showProfile && <ProfileModal onClose={() => setShowProfile(false)} />}
         </div>
     );
 };

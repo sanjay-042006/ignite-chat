@@ -60,6 +60,7 @@ export const signup = async (req, res) => {
                 username: true,
                 email: true,
                 profilePic: true,
+                storyStreak: true,
                 createdAt: true
             }
         });
@@ -71,6 +72,8 @@ export const signup = async (req, res) => {
             username: newUser.username,
             email: newUser.email,
             profilePic: newUser.profilePic,
+            storyStreak: newUser.storyStreak,
+            loveStreak: 0, // Fresh users have 0
             token
         });
     } catch (error) {
@@ -101,6 +104,20 @@ export const login = async (req, res) => {
             return res.status(400).json({ message: 'Invalid credentials' });
         }
 
+        // Calculate love streak
+        const activeLove = await prisma.loveConnection.findFirst({
+            where: {
+                OR: [{ senderId: user.id }, { receiverId: user.id }],
+                status: 'ACCEPTED'
+            }
+        });
+
+        let loveStreak = 0;
+        if (activeLove) {
+            const diffDays = Math.ceil(Math.abs(new Date() - new Date(activeLove.createdAt)) / (1000 * 60 * 60 * 24));
+            loveStreak = Math.floor(diffDays / 30.44) + 1;
+        }
+
         const token = generateToken(user.id, res);
 
         res.status(200).json({
@@ -108,6 +125,8 @@ export const login = async (req, res) => {
             username: user.username,
             email: user.email,
             profilePic: user.profilePic,
+            storyStreak: user.storyStreak,
+            loveStreak,
             token
         });
     } catch (error) {
