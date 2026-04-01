@@ -97,6 +97,7 @@ model GroupMember {
   id        String   @id @default(uuid())
   joinedAt  DateTime @default(now())
   isAdmin   Boolean  @default(false)
+  lastReadAt DateTime @default(now())
 
   userId    String
   user      User     @relation(fields: [userId], references: [id])

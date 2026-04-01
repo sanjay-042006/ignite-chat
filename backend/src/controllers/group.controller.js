@@ -81,7 +81,29 @@ export const getGroups = async (req, res) => {
             }
         });
 
-        res.status(200).json(groups);
+        // For each group, count messages after the user's lastReadAt (stored on GroupMember)
+        const groupIds = groups.map(g => g.id);
+        const myMemberships = await prisma.groupMember.findMany({
+            where: { userId, groupId: { in: groupIds } },
+            select: { groupId: true, lastReadAt: true },
+        });
+        const lastReadMap = new Map(myMemberships.map(m => [m.groupId, m.lastReadAt]));
+
+        // Count unread messages per group (messages after lastReadAt, not sent by me)
+        const groupsWithUnread = await Promise.all(groups.map(async (group) => {
+            const lastReadAt = lastReadMap.get(group.id) || new Date(0);
+            const unreadCount = await prisma.message.count({
+                where: {
+                    groupId: group.id,
+                    roomType: 'GROUP',
+                    senderId: { not: userId },
+                    createdAt: { gt: lastReadAt },
+                },
+            });
+            return { ...group, unreadCount };
+        }));
+
+        res.status(200).json(groupsWithUnread);
     } catch (error) {
         console.error('Error in getGroups:', error.message);
         res.status(500).json({ error: 'Internal server error' });
@@ -405,6 +427,23 @@ export const removeGroupMember = async (req, res) => {
         res.status(200).json({ message: 'Member removed successfully' });
     } catch (error) {
         console.error('Error in removeGroupMember:', error.message);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+export const markGroupRead = async (req, res) => {
+    try {
+        const { groupId } = req.params;
+        const userId = req.user.id;
+
+        await prisma.groupMember.update({
+            where: { userId_groupId: { userId, groupId } },
+            data: { lastReadAt: new Date() },
+        });
+
+        res.status(200).json({ success: true });
+    } catch (error) {
+        console.error('Error in markGroupRead:', error.message);
         res.status(500).json({ error: 'Internal server error' });
     }
 };

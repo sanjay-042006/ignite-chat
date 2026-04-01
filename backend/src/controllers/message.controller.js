@@ -46,6 +46,18 @@ export const getUsersForSidebar = async (req, res) => {
         const sentReqIds = new Set(requests.filter(r => r.senderId === loggedInUserId).map(r => r.receiverId));
         const recReqIds = new Set(requests.filter(r => r.receiverId === loggedInUserId).map(r => r.senderId));
 
+        // Count unread messages per sender for this user
+        const unreadCounts = await prisma.message.groupBy({
+            by: ['senderId'],
+            where: {
+                receiverId: loggedInUserId,
+                roomType: 'DIRECT',
+                isRead: false,
+            },
+            _count: { id: true },
+        });
+        const unreadMap = new Map(unreadCounts.map(u => [u.senderId, u._count.id]));
+
         const usersWithStatus = filteredUsers.map(user => {
             let status = 'NONE';
             if (friendIds.has(user.id)) status = 'FRIEND';
@@ -62,7 +74,8 @@ export const getUsersForSidebar = async (req, res) => {
                 ...user, 
                 friendshipStatus: status, 
                 requestId,
-                loveStreak: activeLovesMap.get(user.id) || 0
+                loveStreak: activeLovesMap.get(user.id) || 0,
+                unreadCount: unreadMap.get(user.id) || 0,
             };
         });
 

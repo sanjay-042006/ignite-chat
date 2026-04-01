@@ -142,8 +142,17 @@ const GroupSidebar = () => {
                                         </div>
                                     )}
                                     <div className="min-w-0 flex-1">
-                                        <p className="font-semibold text-xs truncate">{group.name}</p>
-                                        <p className="text-[10px] text-muted-foreground/50 font-medium">{group.members?.length || 0} members</p>
+                                        <div className="flex items-center justify-between mb-0.5">
+                                            <p className="font-semibold text-xs truncate">{group.name}</p>
+                                            {group.unreadCount > 0 && (
+                                                <span className="text-[9px] font-bold text-violet-400 shrink-0">
+                                                    {group.unreadCount === 1 ? "New message" : `${group.unreadCount} new messages`}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <p className={clsx("text-[10px] font-medium", group.unreadCount > 0 ? "text-violet-400 font-bold" : "text-muted-foreground/50")}>
+                                            {group.unreadCount > 0 ? "New message in group" : `${group.members?.length || 0} members`}
+                                        </p>
                                     </div>
                                     {amAdmin && (
                                         <button onClick={(e) => { e.stopPropagation(); if (confirm(`Delete "${group.name}"?`)) deleteGroup(group.id); }}

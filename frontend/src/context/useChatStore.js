@@ -2,6 +2,10 @@ import { create } from 'zustand';
 import { api } from './useAuthStore';
 import { useSocketStore } from './useSocketStore';
 
+// Named listener refs so we can remove only these specific handlers
+let _chatNewMessageHandler = null;
+let _chatMessagesSeenHandler = null;
+
 export const useChatStore = create((set, get) => ({
     messages: [],
     users: [],
@@ -55,31 +59,36 @@ export const useChatStore = create((set, get) => ({
 
         const socket = useSocketStore.getState().socket;
 
-        socket.on('newMessage', (newMessage) => {
-            const isMessageSentFromSelectedUser = newMessage.senderId === selectedUser.id;
-            if (!isMessageSentFromSelectedUser) return;
-
-            set({
-                messages: [...get().messages, newMessage],
-            });
-
-            // Automatically mark as seen if we are actively viewing this chat
+        // Use named refs so we only remove THESE handlers (not the global one in socketStore)
+        _chatNewMessageHandler = (newMessage) => {
+            if (newMessage.senderId !== selectedUser.id) return;
+            set({ messages: [...get().messages, newMessage] });
             markMessagesAsSeen(selectedUser.id);
-        });
+        };
 
-        socket.on('messagesSeen', ({ byUserId }) => {
+        _chatMessagesSeenHandler = ({ byUserId }) => {
             if (selectedUser.id === byUserId) {
                 set({
-                    messages: get().messages.map(msg => ({ ...msg, isRead: msg.isRead || true }))
+                    messages: get().messages.map(msg => ({ ...msg, isRead: true }))
                 });
             }
-        });
+        };
+
+        socket.on('newMessage', _chatNewMessageHandler);
+        socket.on('messagesSeen', _chatMessagesSeenHandler);
     },
 
     unsubscribeFromMessages: () => {
         const socket = useSocketStore.getState().socket;
-        socket.off('newMessage');
-        socket.off('messagesSeen');
+        if (!socket) return;
+        if (_chatNewMessageHandler) {
+            socket.off('newMessage', _chatNewMessageHandler);
+            _chatNewMessageHandler = null;
+        }
+        if (_chatMessagesSeenHandler) {
+            socket.off('messagesSeen', _chatMessagesSeenHandler);
+            _chatMessagesSeenHandler = null;
+        }
     },
 
     markMessagesAsSeen: async (senderId) => {
@@ -123,5 +132,15 @@ export const useChatStore = create((set, get) => ({
         }
     },
 
-    setSelectedUser: (selectedUser) => set({ selectedUser }),
+    setSelectedUser: (selectedUser) => {
+        // Clear unread count when selecting a user
+        if (selectedUser) {
+            set({
+                users: get().users.map(u =>
+                    u.id === selectedUser.id ? { ...u, unreadCount: 0 } : u
+                )
+            });
+        }
+        set({ selectedUser });
+    },
 }));

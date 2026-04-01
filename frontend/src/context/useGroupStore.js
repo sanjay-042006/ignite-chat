@@ -64,6 +64,16 @@ export const useGroupStore = create((set, get) => ({
     },
 
     setSelectedGroup: (selectedGroup) => {
+        // Clear unread badge when opening a group
+        if (selectedGroup) {
+            set({
+                groups: get().groups.map(g =>
+                    g.id === selectedGroup.id ? { ...g, unreadCount: 0 } : g
+                )
+            });
+            // Mark as read on the server
+            api.put(`/groups/${selectedGroup.id}/read`).catch(() => {});
+        }
         set({ selectedGroup });
         if (selectedGroup) {
             get().getGroupMessages(selectedGroup.id);

@@ -126,14 +126,23 @@ const ChatSidebar = () => {
                         </div>
 
                         <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-1.5 mb-0.5">
-                                <p className="font-semibold text-sm md:text-xs truncate">{user.username}</p>
-                                {user.storyStreak !== undefined && <span className="text-[9px] text-fuchsia-400 font-bold bg-fuchsia-500/10 px-1 rounded flex items-center gap-0.5 border border-fuchsia-500/20" title="Story Streak">{user.storyStreak}🔥</span>}
-                                {user.loveStreak !== undefined && <span className="text-[9px] text-pink-400 font-bold bg-pink-500/10 px-1 rounded flex items-center gap-0.5 border border-pink-500/20" title="Love Streak">{user.loveStreak}m💕</span>}
+                            <div className="flex items-center justify-between mb-0.5">
+                                <div className="flex items-center gap-1.5 min-w-0">
+                                    <p className="font-semibold text-sm md:text-xs truncate">{user.username}</p>
+                                    {user.storyStreak !== undefined && <span className="text-[9px] text-fuchsia-400 font-bold bg-fuchsia-500/10 px-1 rounded flex items-center gap-0.5 border border-fuchsia-500/20" title="Story Streak">{user.storyStreak}🔥</span>}
+                                    {user.loveStreak !== undefined && <span className="text-[9px] text-pink-400 font-bold bg-pink-500/10 px-1 rounded flex items-center gap-0.5 border border-pink-500/20" title="Love Streak">{user.loveStreak}m💕</span>}
+                                </div>
+                                {user.unreadCount > 0 && (
+                                    <span className="text-[10px] font-bold text-blue-400 shrink-0">
+                                        {user.unreadCount === 1 ? "New message" : `${user.unreadCount} new messages`}
+                                    </span>
+                                )}
                             </div>
                             {activeTab === 'friends' && (
-                                <p className={clsx("text-[10px] truncate font-medium", onlineUsers.includes(user.id) ? "text-emerald-400/70" : "text-muted-foreground/50")}>
-                                    {onlineUsers.includes(user.id) ? "Online" : "Offline"}
+                                <p className={clsx("text-[10px] truncate font-medium", 
+                                    user.unreadCount > 0 ? "text-blue-400 font-bold" : (onlineUsers.includes(user.id) ? "text-emerald-400/70" : "text-muted-foreground/50")
+                                )}>
+                                    {user.unreadCount > 0 ? "Sent a message" : (onlineUsers.includes(user.id) ? "Online" : "Offline")}
                                 </p>
                             )}
                             {activeTab === 'requests' && user.friendshipStatus === 'PENDING_SENT' && (

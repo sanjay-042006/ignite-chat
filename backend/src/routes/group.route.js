@@ -9,7 +9,8 @@ import {
     leaveGroup,
     updateGroupProfilePic,
     addGroupMembers,
-    removeGroupMember
+    removeGroupMember,
+    markGroupRead
 } from '../controllers/group.controller.js';
 
 const router = express.Router();
@@ -23,5 +24,6 @@ router.post('/:groupId/leave', protectRoute, leaveGroup);
 router.put('/:groupId/profile-pic', protectRoute, updateGroupProfilePic);
 router.post('/:groupId/members', protectRoute, addGroupMembers);
 router.delete('/:groupId/members/:userId', protectRoute, removeGroupMember);
+router.put('/:groupId/read', protectRoute, markGroupRead);
 
 export default router;
