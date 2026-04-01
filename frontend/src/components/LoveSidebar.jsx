@@ -152,11 +152,18 @@ const LoveSidebar = () => {
                             )} />
                         </div>
                         <div className="min-w-0 flex-1">
-                            <p className="font-semibold text-sm truncate">{conn.partner.username}</p>
+                            <div className="flex items-center justify-between mb-0.5">
+                                <p className="font-semibold text-sm truncate">{conn.partner.username}</p>
+                                {conn.unreadCount > 0 && (
+                                    <span className="text-[9px] font-bold text-pink-400 shrink-0">
+                                        {conn.unreadCount === 1 ? "New message" : `${conn.unreadCount} new messages`}
+                                    </span>
+                                )}
+                            </div>
                             <p className={clsx("text-[11px] truncate font-medium",
-                                conn.status === 'BREAKING_UP' ? "text-red-400" : "text-pink-400/70"
+                                conn.status === 'BREAKING_UP' ? "text-red-400" : (conn.unreadCount > 0 ? "text-pink-400 font-bold" : "text-pink-400/70")
                             )}>
-                                {conn.status === 'BREAKING_UP' ? '💔 Breakup pending' : '💕 Your Partner'}
+                                {conn.status === 'BREAKING_UP' ? '💔 Breakup pending' : (conn.unreadCount > 0 ? 'Sent a message' : '💕 Your Partner')}
                             </p>
                         </div>
                         <Heart className={clsx("size-4 shrink-0 transition-all",

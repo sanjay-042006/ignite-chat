@@ -1,9 +1,12 @@
 import { NavLink } from 'react-router-dom';
 import { useAuthStore } from '../context/useAuthStore';
+import { useChatStore } from '../context/useChatStore';
+import { useGroupStore } from '../context/useGroupStore';
+import { useLoveStore } from '../context/useLoveStore';
 import { LogOut, MessageSquare, Ghost, Users, Compass, BookOpen, Edit, Heart, Flame, Camera } from 'lucide-react';
 import { resolveUrl } from '../lib/utils';
 import clsx from 'clsx';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ProfileModal from './ProfileModal';
 
 const links = [
@@ -18,7 +21,25 @@ const links = [
 
 const Sidebar = ({ className = '', isMobile = false }) => {
     const { authUser, logout } = useAuthStore();
+    const { users, getUsers } = useChatStore();
+    const { groups, getGroups } = useGroupStore();
+    const { connections, getConnections } = useLoveStore();
     const [showProfile, setShowProfile] = useState(false);
+
+    useEffect(() => {
+        if (authUser) {
+            getUsers();
+            getGroups();
+            getConnections();
+        }
+    }, [authUser, getUsers, getGroups, getConnections]);
+
+    const getUnreadCount = (label) => {
+        if (label === 'Chat') return users.reduce((sum, u) => sum + (u.unreadCount || 0), 0);
+        if (label === 'Groups') return groups.reduce((sum, g) => sum + (g.unreadCount || 0), 0);
+        if (label === 'Love') return connections.reduce((sum, c) => sum + (c.unreadCount || 0), 0);
+        return 0;
+    };
 
     const handleImageUpload = async (e) => {
         const file = e.target.files[0];
@@ -52,10 +73,15 @@ const Sidebar = ({ className = '', isMobile = false }) => {
                             {({ isActive }) => (
                                 <>
                                     <div className={clsx(
-                                        "size-9 rounded-xl flex items-center justify-center transition-all",
+                                        "size-9 rounded-xl flex items-center justify-center transition-all relative",
                                         isActive ? `bg-gradient-to-br ${item.color} shadow-sm` : ""
                                     )}>
                                         <item.icon className="size-5" />
+                                        {getUnreadCount(item.label) > 0 && (
+                                            <div className="absolute -top-1 -right-1 size-4 bg-red-500 rounded-full flex items-center justify-center border-2 border-[#05070e]">
+                                                <span className="text-[8px] font-bold text-white">{getUnreadCount(item.label)}</span>
+                                            </div>
+                                        )}
                                     </div>
                                     <span className="text-[9px] font-semibold truncate leading-none mt-0.5">{item.label}</span>
                                 </>
@@ -127,10 +153,15 @@ const Sidebar = ({ className = '', isMobile = false }) => {
                                         <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-gradient-to-b from-indigo-400 to-purple-400" />
                                     )}
                                     <div className={clsx(
-                                        "size-8 rounded-lg flex items-center justify-center transition-all shrink-0",
+                                        "size-8 rounded-lg flex items-center justify-center transition-all shrink-0 relative",
                                         isActive ? `bg-gradient-to-br ${item.color} shadow-sm` : "group-hover/link:bg-white/5"
                                     )}>
                                         <item.icon className="size-4" />
+                                        {getUnreadCount(item.label) > 0 && (
+                                            <div className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 bg-red-500 rounded-full flex items-center justify-center border-2 border-[#0c1120]">
+                                                <span className="text-[8px] font-black text-white">{getUnreadCount(item.label)}</span>
+                                            </div>
+                                        )}
                                     </div>
                                     <span className={clsx("hidden lg:block ml-2.5 text-[13px] font-medium truncate", isActive && "font-semibold")}>{item.label}</span>
                                 </>

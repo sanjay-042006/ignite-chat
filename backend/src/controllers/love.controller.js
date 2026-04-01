@@ -159,9 +159,18 @@ export const getConnections = async (req, res) => {
             orderBy: { createdAt: 'desc' }
         });
 
-        const mapped = connections.map(c => {
+        const mapped = await Promise.all(connections.map(async (c) => {
             const partner = c.senderId === myId ? c.receiver : c.sender;
             const direction = c.senderId === myId ? 'SENT' : 'RECEIVED';
+            
+            const unreadCount = await prisma.loveMessage.count({
+                where: {
+                    connectionId: c.id,
+                    senderId: { not: myId },
+                    isRead: false
+                }
+            });
+
             return {
                 id: c.id,
                 partner,
@@ -169,9 +178,10 @@ export const getConnections = async (req, res) => {
                 direction,
                 breakupInitiatedBy: c.breakupInitiatedBy,
                 breakupInitiatedAt: c.breakupInitiatedAt,
-                createdAt: c.createdAt
+                createdAt: c.createdAt,
+                unreadCount
             };
-        });
+        }));
 
         res.status(200).json(mapped);
     } catch (error) {

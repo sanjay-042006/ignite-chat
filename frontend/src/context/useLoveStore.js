@@ -129,6 +129,14 @@ export const useLoveStore = create((set, get) => ({
     },
 
     setSelectedConnection: (connection) => {
+        if (connection) {
+            set((state) => ({
+                connections: state.connections.map(c => 
+                    c.id === connection.id ? { ...c, unreadCount: 0 } : c
+                )
+            }));
+            api.put(`/love/${connection.id}/seen`).catch(() => {});
+        }
         set({ selectedConnection: connection, messages: [], isAIChatActive: false });
         if (connection) {
             get().getMessages(connection.id);

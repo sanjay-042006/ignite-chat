@@ -115,7 +115,20 @@ export const useSocketStore = create((set, get) => ({
 
         socket.on('newLoveMessage', async (msg) => {
             const authUserId = useAuthStore.getState().authUser?.id;
-            if (!isAppActive && msg.senderId !== authUserId) {
+            if (msg.senderId === authUserId) return;
+
+            const { useLoveStore } = await import('./useLoveStore');
+            const loveState = useLoveStore.getState();
+            // Only increment if not current selected connection
+            if (!loveState.selectedConnection || loveState.selectedConnection.id !== msg.connectionId) {
+                useLoveStore.setState({
+                    connections: loveState.connections.map(c => 
+                        c.id === msg.connectionId ? { ...c, unreadCount: (c.unreadCount || 0) + 1 } : c
+                    )
+                });
+            }
+
+            if (!isAppActive) {
                 try {
                     await LocalNotifications.schedule({
                         notifications: [{
