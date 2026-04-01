@@ -65,14 +65,21 @@ export const evaluateGroupStory = async (groupId) => {
 
         if (ai) {
             const storyText = group.entries.map(e => `Entry ${e.dayNumber} (User ${e.userId}): ${e.content}`).join("\n");
-            const prompt = `You are a literary critic and editor evaluating a collaborative story of genre "${group.genre}".
+            const prompt = `You are a master literary critic and editor evaluating a collaborative story of genre "${group.genre}".
+
+CRITICAL LANGUAGE RULES:
+- You are a master of multilingual storytelling. You perfectly understand and appreciate Tanglish (Tamil + English), Hinglish (Hindi + English), and any regional language mix.
+- If the story is written in a language mix (like "enna panra", "vaa da", "okay thala"), do NOT treat it as broken English. Treat it as a natural, creative language style.
+- Evaluate the story's creativity, plot, and character development while respecting their chosen language and slang.
+- Your creative title and explanation should reflect the vibe and language of the story.
+
 Here is the story entry by entry:
 ${storyText}
 
 1. Create a compelling, creative title for this story.
 2. Evaluate the story for creativity, plot development, and emotional impact.
 3. Determine which User made the most impactful or creative contribution (the "turning point" or best moment).
-4. Assemble all the entries into a single cohesive, formatted story. Fix any obvious disjointed sentences, ensure smooth transitions between entries, and format it nicely into paragraphs like a real book.
+4. Assemble all the entries into a single cohesive, formatted story. Fix any obvious disjointed sentences, ensure smooth transitions between entries, and format it nicely into paragraphs like a real book. Keep the original language and slang intact!
 5. Return ONLY a JSON object with this exact structure:
 {
   "storyTitle": "A creative title for this story",
