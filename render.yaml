@@ -1,18 +1,21 @@
 services:
   - type: web
-    name: ignitechat
+    name: ignitechat-backend
     env: node
     region: oregon 
-    # The root of the application for deploying backend + frontend together
+    # Root directory for backend
     rootDir: backend
-    buildCommand: "cd ../frontend && npm install && npm run build && cd ../backend && npm install"
+    buildCommand: "npm install && npx prisma generate"
     startCommand: "npm start"
     envVars:
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
-        # You will need to put your actual database URL here or in the Render dashboard
+        # You will need to put your Supabase connection string in the Render dashboard
         sync: false
       - key: JWT_SECRET
         # Generate a random secret and put it in Render's dashboard
+        sync: false
+      - key: CLIENT_URL
+        # Set this to your Vercel frontend URL to allow CORS (e.g. https://ignitechat-frontend.vercel.app)
         sync: false

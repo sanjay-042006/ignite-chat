@@ -19,13 +19,22 @@ import friendsRoutes from './routes/friends.route.js';
 import loveRoutes from './routes/love.route.js';
 
 
+const allowedOrigins = process.env.CLIENT_URL ? process.env.CLIENT_URL.split(',') : ['http://localhost:5173'];
+
+// Trust proxy for secure cookies and accurate IP addresses behind load balancers (Fly.io, Vercel)
+app.set('trust proxy', 1);
+
 // Middleware
 app.use(cors({
   origin: function (origin, callback) {
     // Allow requests with no origin (mobile apps, curl, etc)
     if (!origin) return callback(null, true);
-    // Allow any origin during development
-    callback(null, true);
+    // Strict origin validation based on env vars
+    if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== 'production') {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true

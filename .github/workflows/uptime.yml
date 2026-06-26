@@ -1,0 +1,24 @@
+name: Uptime Monitor
+
+on:
+  schedule:
+    # Run every 15 minutes to prevent Fly.io instance from sleeping
+    - cron: '*/15 * * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  ping_health:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Backend Health Endpoint
+        run: |
+          # Replace the URL below with your actual Fly.io (or production) app URL
+          URL="${{ secrets.BACKEND_URL }}/health"
+          echo "Pinging $URL"
+          RESPONSE=$(curl -s -w "%{http_code}" -o /dev/null "$URL")
+          if [ "$RESPONSE" -eq 200 ]; then
+            echo "Health check passed!"
+          else
+            echo "Health check failed with status $RESPONSE"
+            exit 1
+          fi

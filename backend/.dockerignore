@@ -1,0 +1,14 @@
+node_modules
+.env
+.git
+.gitignore
+README.md
+Dockerfile
+.dockerignore
+npm-debug.log
+error-log.json
+error_log.txt
+err.txt
+prisma_error.log
+prisma_validate.log
+public/uploads
