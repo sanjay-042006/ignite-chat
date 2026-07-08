@@ -73,16 +73,9 @@ cron.schedule('0 0 * * *', async () => {
   await evaluateGlobalStories();
 });
 
-// In production, serve the built frontend
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// In production, the frontend will be served independently (e.g., via Vercel).
+// The backend will act strictly as an API service.
 
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../../frontend/dist')));
-  app.get(/(.*)/, (req, res) => {
-    res.sendFile(path.join(__dirname, '../../frontend/dist', 'index.html'));
-  });
-}
 
 const PORT = process.env.PORT || 5000;
 
