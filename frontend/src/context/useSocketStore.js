@@ -4,7 +4,7 @@ import { useAuthStore } from './useAuthStore';
 import { App } from '@capacitor/app';
 import { LocalNotifications } from '@capacitor/local-notifications';
 
-const BASE_URL = import.meta.env.VITE_BASE_URL || undefined;
+const BASE_URL = import.meta.env.VITE_BASE_URL || (import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace(/\/api\/?$/, '') : undefined);
 
 let isAppActive = true;
 
