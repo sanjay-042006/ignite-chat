@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 const api = axios.create({
     baseURL: import.meta.env.VITE_API_URL || '/api',
     withCredentials: true,
-    timeout: 15000, // Important: prevents UI from freezing forever on blocked domains
+    timeout: 60000, // Important: Render free instances take ~50s to wake up from sleep
 });
 
 api.interceptors.request.use(config => {
